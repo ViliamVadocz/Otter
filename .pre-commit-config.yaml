@@ -1,5 +1,7 @@
 fail_fast: false
 
+exclude: src/rlutilities/
+
 default_language_version:
   python: python3
 
