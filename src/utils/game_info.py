@@ -7,8 +7,8 @@ from typing import List
 
 
 class GameInfo(Game):
-    def __init__(self, team):
-        super().__init__(team, team)  # HACK not sure why the second arg is there
+    def __init__(self, index: int, team: int):
+        super().__init__(index, team)
         self.ball_prediction: BallPrediction = []
         self.large_boost_pads: List[Pad] = []
         self.small_boost_pads: List[Pad] = []
@@ -49,3 +49,11 @@ class GameInfo(Game):
         return [
             self.cars[i] for i in range(self.num_cars) if self.cars[i].team != car.team
         ]
+
+    @property
+    def index(self):
+        return self.id
+
+    @property
+    def car(self):
+        return self.cars[self.index]
