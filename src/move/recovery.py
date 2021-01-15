@@ -5,11 +5,25 @@ from utils.const import MAX_CAR_SPEED
 from utils.game_info import GameInfo
 from rlutilities.mechanics import AerialTurn
 from rlutilities.simulation import Field, sphere
-from rlutilities.linear_algebra import dot, mat3, norm, vec3, cross, normalize
+from rlutilities.linear_algebra import (
+    dot,
+    mat3,
+    norm,
+    vec2,
+    vec3,
+    cross,
+    look_at,
+    normalize,
+    angle_between,
+)
 
 SIM_POINTS_NUM = 200
 SIM_DT = 1.0 / 30.0
 SIM_SPHERE_R = 40
+LOOK_DOWN_TIME = 0.6
+MAX_BOOST_ANGLE = 0.1
+MIN_BOOST = 0
+MIN_LANDING_DIST = 300
 
 
 class Recovery(Move):
@@ -18,14 +32,39 @@ class Recovery(Move):
         self.turn = AerialTurn(info.my_car)
 
     def update(self):
-        _landing, orientation = self.simulate()
-        # TODO boost towards ground
+        car = self.info.my_car
+        landing, orientation, normal, time = self.simulate()
+
+        boost = False
+        if (
+            car.boost > MIN_BOOST
+            and time > LOOK_DOWN_TIME
+            and norm(landing - car.position) > MIN_LANDING_DIST
+        ):
+            if normal is not None:
+                # Boost in opposite direction to normal
+                # such that up is velocity flatted by normal.
+                up = normalize(car.velocity - dot(car.velocity, normal) * normal)
+                orientation = look_at(-1 * normal, up)
+            else:
+                # Just boost down if we don't have a collision normal.
+                flat_vel = car.velocity
+                flat_vel[2] = 0
+                orientation = look_at(vec3(0, 0, -1), normalize(flat_vel))
+
+            boost = (
+                norm(car.velocity) < 2300
+                and angle_between(car.orientation, orientation) < MAX_BOOST_ANGLE
+            )
+
         self.turn.target = orientation
         self.turn.step(self.info.time_delta)
         self.controls = self.turn.controls
+        self.controls.boost = boost
+        self.controls.throttle = 1.0  # Prevent turtling.
         self.finished = self.info.my_car.on_ground
 
-    def simulate(self) -> Tuple[vec3, mat3]:
+    def simulate(self) -> Tuple[vec3, mat3, vec3, float]:
         pos = vec3(self.info.my_car.position)
         vel = vec3(self.info.my_car.velocity)
         grav = vec3(0, 0, 1) * self.info.gravity
@@ -55,7 +94,7 @@ class Recovery(Move):
                     forward[2], left[2], collision_normal[2],
                 )
                 # fmt: on
-                return pos, orientation
+                return pos, orientation, collision_normal, SIM_DT * i
 
         # If we don't return in the loop we use the current orientation.
-        return pos, self.info.my_car.orientation
+        return pos, self.info.my_car.orientation, None, SIM_POINTS_NUM * SIM_DT

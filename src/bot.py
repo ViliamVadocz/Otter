@@ -7,7 +7,10 @@ from rlutilities.simulation import Input
 from strategy.soccar_strategy import SoccarStrategy
 
 
-class MyBot(BaseAgent):
+class Otter(BaseAgent):
+    def is_hot_reload_enabled(self):
+        return False
+
     def initialize_agent(self):
         self.info = GameInfo(self.index, self.team, self.renderer)
         self.info.set_mode("soccar")
