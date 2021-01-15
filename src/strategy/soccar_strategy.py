@@ -1,9 +1,9 @@
 from typing import Optional
 
-from strategy.strategy import Strategy
-from move.chase_ball import ChaseBall
-from move.recovery import Recovery
 from move.move import Move
+from move.recovery import Recovery
+from move.chase_ball import ChaseBall
+from strategy.strategy import Strategy
 
 
 class SoccarStrategy(Strategy):

@@ -1,12 +1,11 @@
 from typing import Tuple
 
-from rlutilities.mechanics import AerialTurn
-from rlutilities.linear_algebra import vec3, mat3, norm, normalize, cross, dot
-from rlutilities.simulation import Field, sphere
-from utils.game_info import GameInfo
-from utils.const import MAX_CAR_SPEED
 from move.move import Move
-
+from utils.const import MAX_CAR_SPEED
+from utils.game_info import GameInfo
+from rlutilities.mechanics import AerialTurn
+from rlutilities.simulation import Field, sphere
+from rlutilities.linear_algebra import dot, mat3, norm, vec3, cross, normalize
 
 SIM_POINTS_NUM = 200
 SIM_DT = 1.0 / 30.0

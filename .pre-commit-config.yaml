@@ -31,3 +31,9 @@ repos:
   hooks:
   - id: pretty-format-yaml
     args: [--autofix]
+
+- repo: https://github.com/pycqa/isort
+  rev: master
+  hooks:
+  - id: isort
+    args: [--profile, black, --filter-files, --length-sort]

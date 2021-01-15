@@ -1,8 +1,8 @@
-from rlutilities.linear_algebra import norm, dot, vec3, normalize
+from move.move import Move
+from utils.game_info import GameInfo
 from rlutilities.mechanics import Drive
 from rlutilities.simulation import Car
-from utils.game_info import GameInfo
-from move.move import Move
+from rlutilities.linear_algebra import dot, norm, vec3, normalize
 
 
 class ChaseBall(Move):

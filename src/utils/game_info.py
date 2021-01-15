@@ -1,9 +1,9 @@
+from typing import List
+
 from rlbot.utils.structures.game_data_struct import GameTickPacket, FieldInfoPacket
 from rlbot.utils.structures.ball_prediction_struct import BallPrediction
 
-from rlutilities.simulation import Game, Car, Ball, Pad
-
-from typing import List
+from rlutilities.simulation import Car, Pad, Ball, Game
 
 
 class GameInfo(Game):

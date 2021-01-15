@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from utils.game_info import GameInfo
 from move.move import Move
+from utils.game_info import GameInfo
 
 
 class Strategy(ABC):

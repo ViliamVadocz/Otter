@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-from rlutilities.simulation import Input
 from utils.game_info import GameInfo
+from rlutilities.simulation import Input
 
 
 class Move(ABC):

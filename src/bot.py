@@ -1,10 +1,10 @@
-from rlbot.utils.structures.game_data_struct import GameTickPacket
 from rlbot.agents.base_agent import BaseAgent
+from rlbot.utils.structures.game_data_struct import GameTickPacket
 
-from strategy.soccar_strategy import SoccarStrategy
-from rlutilities.simulation import Input
 from utils.game_info import GameInfo
 from strategy.strategy import Strategy
+from rlutilities.simulation import Input
+from strategy.soccar_strategy import SoccarStrategy
 
 
 class MyBot(BaseAgent):
