@@ -9,7 +9,7 @@ from strategy.strategy import Strategy
 
 class MyBot(BaseAgent):
     def initialize_agent(self):
-        self.info = GameInfo(self.index, self.team)
+        self.info = GameInfo(self.index, self.team, self.renderer)
         self.info.set_mode("soccar")
         self.field_info = self.get_field_info()
         self.strategy: Strategy = SoccarStrategy(self.info)

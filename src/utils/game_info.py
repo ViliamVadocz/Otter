@@ -7,11 +7,12 @@ from typing import List
 
 
 class GameInfo(Game):
-    def __init__(self, index: int, team: int):
+    def __init__(self, index: int, team: int, renderer):
         super().__init__(index, team)
         self.ball_prediction: BallPrediction = []
         self.large_boost_pads: List[Pad] = []
         self.small_boost_pads: List[Pad] = []
+        self.draw = renderer
 
     def update(
         self,
@@ -20,7 +21,9 @@ class GameInfo(Game):
         ball_prediction: BallPrediction,
     ):
         self.read_game_information(packet, field_info)
-        self.ball_prediction = ball_prediction  # TODO maybe convert to RLU Ball objects
+        self.ball_prediction = (
+            ball_prediction  # TODO Maybe convert to RLU Ball objects.
+        )
         self.large_boost_pads = [
             self.pads[i]
             for i in range(field_info.num_boosts)
@@ -32,7 +35,7 @@ class GameInfo(Game):
             if not field_info.boost_pads[i].is_full_boost
         ]
 
-        # invert large boost pad timers
+        # Invert large boost pad timers.
         for pad in self.large_boost_pads:
             pad.timer = 10.0 - pad.timer
         for pad in self.small_boost_pads:
@@ -53,7 +56,3 @@ class GameInfo(Game):
     @property
     def index(self):
         return self.id
-
-    @property
-    def car(self):
-        return self.cars[self.index]

@@ -8,10 +8,10 @@ from move.move import Move
 class ChaseBall(Move):
     def __init__(self, info: GameInfo):
         super().__init__(info)
-        self.drive = Drive(info.car)
+        self.drive = Drive(info.my_car)
 
     def update(self):
-        car: Car = self.info.car
+        car: Car = self.info.my_car
         if (
             norm(car.velocity) + car.boost / 33.3 * 1060 < 2200
             and not self.info.kickoff_pause
