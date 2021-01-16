@@ -60,9 +60,20 @@ class Recovery(Move):
         self.turn.target = orientation
         self.turn.step(self.info.time_delta)
         self.controls = self.turn.controls
+
         self.controls.boost = boost
         self.controls.throttle = 1.0  # Prevent turtling.
-        self.finished = self.info.my_car.on_ground
+
+        # Jump when touching ceiling.
+        upside_down = dot(car.up(), vec3(0, 0, 1)) < -0.7
+        if upside_down:
+            if car.on_ground:
+                # Just spam jump. More elaborate solutions were less reliable.
+                self.controls.jump = not self.controls.jump
+        else:
+            self.controls.jump = False
+
+        self.finished = car.on_ground and not upside_down
 
     def simulate(self) -> Tuple[vec3, mat3, vec3, float]:
         pos = vec3(self.info.my_car.position)
