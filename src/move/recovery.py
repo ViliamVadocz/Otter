@@ -59,8 +59,9 @@ class Recovery(Move):
 
         self.turn.target = orientation
         self.turn.step(self.info.time_delta)
-        self.controls = self.turn.controls
-
+        self.controls.pitch = self.turn.controls.pitch
+        self.controls.yaw = self.turn.controls.yaw
+        self.controls.roll = self.turn.controls.roll
         self.controls.boost = boost
         self.controls.throttle = 1.0  # Prevent turtling.
 
@@ -85,11 +86,7 @@ class Recovery(Move):
             vel /= max(1.0, norm(vel) / MAX_CAR_SPEED)
             pos += vel * SIM_DT
 
-            # Ignore initial frames in case of ceiling.
-            if i < 5:
-                self.info.draw.draw_rect_3d(pos, 5, 5, True, self.info.draw.purple())
-                continue
-            self.info.draw.draw_rect_3d(pos, 5, 5, True, self.info.draw.green())
+            self.info.draw.draw_rect_3d(pos, 5, 5, True, self.info.draw.blue())
 
             # Check for collisions with field.
             collision_normal = Field.collide(sphere(pos, SIM_SPHERE_R)).direction
