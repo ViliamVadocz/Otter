@@ -1,5 +1,7 @@
 from typing import Tuple
 
+from rlbot.utils.rendering.rendering_manager import RenderingManager
+
 from move.move import Move
 from utils.const import MAX_CAR_SPEED
 from utils.game_info import GameInfo
@@ -81,12 +83,14 @@ class Recovery(Move):
         vel = vec3(self.info.my_car.velocity)
         grav = vec3(0, 0, 1) * self.info.gravity
 
+        self.sim_points = []
         for i in range(SIM_POINTS_NUM):
             vel += grav * SIM_DT
             vel /= max(1.0, norm(vel) / MAX_CAR_SPEED)
             pos += vel * SIM_DT
 
-            self.info.draw.draw_rect_3d(pos, 5, 5, True, self.info.draw.blue())
+            # Keep track of positions for rendering purposes.
+            self.sim_points.append(vec3(pos))
 
             # Check for collisions with field.
             collision_normal = Field.collide(sphere(pos, SIM_SPHERE_R)).direction
@@ -106,3 +110,8 @@ class Recovery(Move):
 
         # If we don't return in the loop we use the current orientation.
         return pos, self.info.my_car.orientation, None, SIM_POINTS_NUM * SIM_DT
+
+    def render(self, r: RenderingManager):
+        if self.sim_points:
+            for pos in self.sim_points:
+                r.draw_rect_3d(pos, 5, 5, True, r.blue())

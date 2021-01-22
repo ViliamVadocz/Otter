@@ -12,6 +12,6 @@ class SoccarStrategy(Strategy):
         return SpeedFlip(self.info)
 
     def find_replace_move(self) -> Optional[Move]:
-        # if not self.info.my_car.on_ground:
-        #     return Recovery(self.info)
+        if not self.info.my_car.on_ground:
+            return Recovery(self.info)
         return None

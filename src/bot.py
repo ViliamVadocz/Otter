@@ -14,7 +14,7 @@ class Otter(BaseAgent):
         return False
 
     def initialize_agent(self):
-        self.info = GameInfo(self.index, self.team, self.renderer)
+        self.info = GameInfo(self.index, self.team)
         self.strategy: Strategy
         self.field_info = self.get_field_info()
 
@@ -24,26 +24,26 @@ class Otter(BaseAgent):
 
         if settings.map == Map.ThrowbackStadium:
             self.info.set_mode("throwback")
-            self.strategy = DefaultStrategy(self.info)
+            self.strategy = DefaultStrategy(self.info, self.renderer)
 
         elif settings.game_mode == GameMode.Soccer:
             self.info.set_mode("soccar")
-            self.strategy = SoccarStrategy(self.info)
+            self.strategy = SoccarStrategy(self.info, self.renderer)
 
         elif settings.game_mode == GameMode.Hoops:
             self.info.set_mode("hoops")
-            self.strategy = DefaultStrategy(self.info)
+            self.strategy = DefaultStrategy(self.info, self.renderer)
 
         elif settings.game_mode == GameMode.Dropshot:
             self.info.set_mode("dropshot")
-            self.strategy = DefaultStrategy(self.info)
+            self.strategy = DefaultStrategy(self.info, self.renderer)
 
         # TODO Hokey, Rumble, Heatseeker
 
         else:
             self.logger.warn(f"Unknown game mode: {settings.game_mode}")
             self.info.set_mode("soccar")
-            self.strategy = DefaultStrategy(self.info)
+            self.strategy = DefaultStrategy(self.info, self.renderer)
 
     def get_output(self, packet: GameTickPacket) -> Input:
         self.info.update(packet, self.field_info, self.get_ball_prediction_struct())

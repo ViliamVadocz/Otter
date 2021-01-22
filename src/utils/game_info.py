@@ -7,12 +7,11 @@ from rlutilities.simulation import Car, Pad, Ball, Game
 
 
 class GameInfo(Game):
-    def __init__(self, index: int, team: int, renderer):
+    def __init__(self, index: int, team: int):
         super().__init__(index, team)
         self.ball_prediction: BallPrediction = []
         self.large_boost_pads: List[Pad] = []
         self.small_boost_pads: List[Pad] = []
-        self.draw = renderer
 
     def update(
         self,
