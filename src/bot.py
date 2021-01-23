@@ -38,10 +38,12 @@ class Otter(BaseAgent):
     def get_output(self, packet: GameTickPacket) -> Input:
         self.info.update(packet, self.field_info, self.get_ball_prediction_struct())
 
+        self.renderer.begin_rendering("path prediction")
         self.renderer.draw_polyline_3d(
             [step.physics.location for step in self.info.ball_prediction.slices][::20],
             self.renderer.cyan(),
         )
+        self.renderer.end_rendering()
 
         self.strategy.update()
         return self.strategy.controls
