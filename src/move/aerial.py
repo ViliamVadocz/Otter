@@ -11,9 +11,10 @@ from rlutilities.mechanics import Aerial as RLUAerial
 from rlutilities.simulation import Input
 from rlutilities.linear_algebra import dot, norm, vec2, vec3, normalize, angle_between
 
-MIN_SPEED_RATIO = 0.7
-MIN_JUMP_ANGLE = 0.1
-GIVE_UP_SPEED = 2200
+MAX_SPEED_ERROR = 0.3
+SPEED_SUBTRACTANT = 300  # @r0bbi3 pls help rename this
+MAX_JUMP_ANGLE = 0.1
+GIVE_UP_SPEED = 2000
 
 
 FIRST_JUMP = 0.15
@@ -37,9 +38,9 @@ class Aerial(Move):
 
         self.drive = Drive(
             self.info,
-            flatten_by_normal_to_level(target, info.my_car.up(), info.my_car.position),
+            # TODO project down to ground instead of flat 20
+            vec3(target[0], target[1], 20),
         )
-        self.drive.target = self.target
 
     def update(self):
 
@@ -76,7 +77,7 @@ class Aerial(Move):
             flat_displacement = flatten_by_normal_to_level(
                 self.target - car.position, car.up(), car.position
             )
-            speed_needed = norm(flat_displacement) / time_left
+            speed_needed = norm(flat_displacement) / time_left - SPEED_SUBTRACTANT
             flat_vel = flatten_by_normal_to_level(car.velocity, car.up(), car.position)
             speed_in_direction = dot(normalize(flat_displacement), flat_vel)
 
@@ -87,10 +88,14 @@ class Aerial(Move):
             if speed_needed > GIVE_UP_SPEED or time_left < 0.0:
                 self.finished = True
             elif (
-                speed_in_direction > speed_needed * MIN_SPEED_RATIO
-                and angle_between(flat_vel, flat_displacement) < MIN_JUMP_ANGLE
+                (speed_in_direction - speed_needed) / speed_needed < MAX_SPEED_ERROR
+                and angle_between(flat_vel, flat_displacement) < MAX_JUMP_ANGLE
             ):
                 self.jumped = True
 
     def render(self, r: RenderingManager):
-        self.drive.render(r)
+        if self.in_air:
+            r.draw_rect_3d(self.target, 3, 3, True, r.red())
+            r.draw_line_3d(self.info.my_car.position, self.target, r.white())
+        else:
+            self.drive.render(r)
