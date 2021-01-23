@@ -55,6 +55,7 @@ class Map(Enum):
     RivalsArena = 39
     Farmstead_Night = 40
     SaltyShores_Night = 41
+    NeonFields = 42
 
 
 class ParsedMatchSettings:
