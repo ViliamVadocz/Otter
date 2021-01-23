@@ -1,0 +1,73 @@
+from const import (
+    BOOST_ACC,
+    BREAK_ACC,
+    COAST_ACC,
+    MIN_BOOST_TIME,
+    throttle_acc_from_speed,
+)
+
+
+class Sim:
+    def __init__(self):
+        self.vel = 0.0
+        self.boosting = False
+        self.boost_time = 0.0
+
+    def step(self, dt, throttle, boost):
+        if throttle > 0.0:
+            if self.vel < 0.0:
+                acc = BREAK_ACC
+            else:
+                acc = throttle_acc_from_speed(self.vel) * throttle
+        elif throttle < 0.0:
+            if self.vel > 0.0:
+                acc = -BREAK_ACC
+            else:
+                acc = throttle_acc_from_speed(-self.vel) * throttle
+        else:
+            if self.vel > 0.0:
+                acc = -COAST_ACC
+            elif self.vel < 0.0:
+                acc = COAST_ACC
+            else:
+                acc = 0.0
+
+        if boost:
+            self.boosting = True
+        elif self.boost_time > MIN_BOOST_TIME:
+            self.boosting = False
+            self.boost_time = 0.0
+
+        if self.boosting:
+            acc += BOOST_ACC
+            self.boost_time += dt
+
+        self.vel += acc * dt
+        self.vel = max(-2300, min(2300, self.vel))
+
+
+if __name__ == "__main__":
+    from math import sin
+
+    import matplotlib.pyplot as plt
+
+    # from ..move.drive import speed_controller
+
+    def speed_controller(u, v, _dt):
+        return 1.0 if v > u else -1.0, False
+
+    sim = Sim()
+    dt = 1 / 60
+    t = [i * dt for i in range(20 * 60)]
+    a = []
+    b = []
+    for time in t:
+        target = sin(time / 2) * 800 - 400
+        a.append(target)
+        b.append(sim.vel)
+        throttle, boost = speed_controller(sim.vel, target, dt)
+        sim.step(dt, throttle, boost)
+    print(b[1])
+    plt.plot(t, a)
+    plt.plot(t, b)
+    plt.show()
