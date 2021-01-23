@@ -4,6 +4,7 @@ from rlbot.utils.rendering.rendering_manager import RenderingManager
 
 from move.move import Move
 from utils.const import MAX_CAR_SPEED
+from utils.vectors import flatten_by_normal
 from utils.game_info import GameInfo
 from rlutilities.mechanics import AerialTurn
 from rlutilities.simulation import Field, sphere
@@ -46,7 +47,7 @@ class Recovery(Move):
             if normal is not None:
                 # Boost in opposite direction to normal
                 # such that up is velocity flatted by normal.
-                up = normalize(car.velocity - dot(car.velocity, normal) * normal)
+                up = normalize(flatten_by_normal(car.velocity, normal))
                 orientation = look_at(-1 * normal, up)
             else:
                 # Just boost down if we don't have a collision normal.
@@ -97,7 +98,7 @@ class Recovery(Move):
             # Break out of simulation when collided.
             if norm(collision_normal) > 0.0:
                 # Flatten velocity with regards to normal to get forward.
-                forward = normalize(vel - dot(vel, collision_normal) * collision_normal)
+                forward = normalize(flatten_by_normal(vel, collision_normal))
                 left = cross(collision_normal, forward)
                 # fmt: off
                 orientation = mat3(
