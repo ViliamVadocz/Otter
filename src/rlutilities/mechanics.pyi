@@ -4,13 +4,16 @@ from typing import Iterator as iterator
 from numpy import float64
 _Shape = Tuple[int, ...]
 import rlutilities.simulation
+from rlutilities.linear_algebra import *
 __all__  = [
 "Aerial",
-"AerialTurn",
 "Boostdash",
 "Dodge",
 "Drive",
+"FollowPath",
 "Jump",
+"Reorient",
+"ReorientML",
 "Wavedash"
 ]
 class Aerial():
@@ -26,29 +29,13 @@ class Aerial():
 
     angle_threshold: float
     arrival_time: float
-    boost_estimate: float
     controls: rlutilities.simulation.Input
+    double_jump: bool
     finished: bool
     reorient_distance: float
-    target: vec3
-    target_orientation: Optional[mat3]
-    throttle_distance: float
+    target_orientation: mat3
+    target_position: vec3
     up: vec3
-    velocity_estimate: vec3
-    pass
-class AerialTurn():
-
-    def __init__(self, arg0: rlutilities.simulation.Car) -> None: ...
-    def simulate(self) -> rlutilities.simulation.Car: ...
-    def step(self, arg0: float) -> None: ...
-
-    alpha: vec3
-    controls: rlutilities.simulation.Input
-    eps_omega: float
-    eps_phi: float
-    finished: bool
-    horizon_time: float
-    target: mat3
     pass
 class Boostdash():
 
@@ -62,7 +49,7 @@ class Dodge():
     forward_torque = 224.0
     input_threshold = 0.5
     side_torque = 260.0
-    timeout = 1.5
+    timeout = 1.25
     torque_time = 0.6499999761581421
     z_damping = 0.3499999940395355
     z_damping_end = 0.20999999344348907
@@ -73,12 +60,11 @@ class Dodge():
     def step(self, arg0: float) -> None: ...
 
     controls: rlutilities.simulation.Input
-    delay: Optional[float]
-    direction: Optional[vec2]
-    duration: Optional[float]
+    delay: float
+    direction: vec2
     finished: bool
-    preorientation: Optional[mat3]
-    target: Optional[vec3]
+    jump_duration: float
+    preorientation: mat3
     timer: float
     pass
 class Drive():
@@ -103,6 +89,17 @@ class Drive():
     speed: float
     target: vec3
     pass
+class FollowPath():
+
+    def __init__(self, arg0: rlutilities.simulation.Car) -> None: ...
+    def step(self, arg0: float) -> None: ...
+
+    arrival_speed: float
+    arrival_time: float
+    controls: rlutilities.simulation.Input
+    finished: bool
+    path: rlutilities.simulation.Curve
+    pass
 class Jump():
     acceleration = 1458.333251953125
     max_duration = 0.20000000298023224
@@ -117,12 +114,37 @@ class Jump():
     duration: float
     finished: bool
     pass
+class Reorient():
+
+    def __init__(self, arg0: rlutilities.simulation.Car) -> None: ...
+    def simulate(self) -> rlutilities.simulation.Car: ...
+    def step(self, arg0: float) -> None: ...
+
+    alpha: vec3
+    controls: rlutilities.simulation.Input
+    eps_omega: float
+    eps_phi: float
+    finished: bool
+    horizon_time: float
+    target_orientation: mat3
+    pass
+class ReorientML():
+
+    def __init__(self, arg0: rlutilities.simulation.Car) -> None: ...
+    def simulate(self) -> rlutilities.simulation.Car: ...
+    def step(self, arg0: float) -> None: ...
+
+    controls: rlutilities.simulation.Input
+    eps_phi: float
+    finished: bool
+    target_orientation: mat3
+    pass
 class Wavedash():
 
     def __init__(self, arg0: rlutilities.simulation.Car) -> None: ...
     def step(self, arg0: float) -> None: ...
 
     controls: rlutilities.simulation.Input
-    direction: Optional[vec2]
+    direction: vec2
     finished: bool
     pass
