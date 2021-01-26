@@ -11,6 +11,7 @@ class Move(ABC):
         self.info: GameInfo = info
         self.controls: Input = Input()
         self.finished: bool = False
+        self.interruptible: bool = True
 
     @abstractmethod
     def update(self):

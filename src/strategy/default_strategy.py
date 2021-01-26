@@ -8,7 +8,7 @@ class DefaultStrategy(Strategy):
     def find_base_move(self) -> Move:
         return None
 
-    def find_replace_move(self) -> Optional[Move]:
+    def find_interrupt_move(self) -> Optional[Move]:
         return None
 
     def update(self):
