@@ -13,8 +13,10 @@ class Sim:
         self.vel = 0.0
         self.boosting = False
         self.boost_time = 0.0
+        self.boost_use = 0.0
 
     def step(self, dt, throttle, boost):
+        throttle = max(-1.0, min(1.0, throttle))
         acc = 0.0
 
         if boost:
@@ -27,6 +29,7 @@ class Sim:
             throttle = 1.0
             acc += BOOST_ACC
             self.boost_time += dt
+            self.boost_use += dt
 
         if throttle > 0.0:
             if self.vel < 0.0:
@@ -47,6 +50,10 @@ class Sim:
         self.vel += acc * dt
         self.vel = max(-MAX_CAR_SPEED, min(MAX_CAR_SPEED, self.vel))
 
+    @property
+    def boost_used(self):
+        return self.boost_use * (100.0 / 3.0)
+
 
 if __name__ == "__main__":
     from math import sin
@@ -55,7 +62,9 @@ if __name__ == "__main__":
 
     # Replace with your own speed controller!
     def speed_controller(u, v, _dt):
-        return (1.0, True) if v > u else (-1.0, False)
+        throttle = (v - u) / 50
+        boost = throttle > 1.0
+        return throttle, boost
 
     sim = Sim()
     dt = 1 / 120
@@ -69,6 +78,7 @@ if __name__ == "__main__":
         b.append(sim.vel)
         throttle, boost = speed_controller(sim.vel, target, dt)
         sim.step(dt, throttle, boost)
+    print("boost used:", sim.boost_used)
     plt.plot(t, a)
     plt.plot(t, b)
     plt.show()
