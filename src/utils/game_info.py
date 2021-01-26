@@ -57,17 +57,19 @@ class GameInfo(Game):
         return self.cars[self.index]
 
     def setup_mode(self):
+        import rlutilities
+
         # TODO Custom map support?
         # if settings.map == Map.UtopiaRetro:
         if self.settings.map == Map.ThrowbackStadium:
-            self.set_mode("throwback")
+            rlutilities.initialize("throwback")
         elif self.settings.game_mode == GameMode.Soccer:
-            self.set_mode("soccar")
+            rlutilities.initialize("soccar")
         elif self.settings.game_mode == GameMode.Hoops:
-            self.set_mode("hoops")
+            rlutilities.initialize("hoops")
         elif self.settings.game_mode == GameMode.Dropshot:
-            self.set_mode("dropshot")
+            rlutilities.initialize("dropshot")
         # TODO Hockey, Rumble, Heatseeker
         else:
             self.logger.warn(f"Unknown game mode: {self.settings.game_mode}")
-            self.set_mode("soccar")
+            rlutilities.initialize("soccar")
