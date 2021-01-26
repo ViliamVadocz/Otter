@@ -60,9 +60,6 @@ class Recovery(Move):
                 and angle_between(car.orientation, orientation) < MAX_BOOST_ANGLE
             )
 
-        if car.id == 0:
-            print("car\n", car.orientation)
-            print("target\n", orientation)
         self.reorient.target_orientation = orientation
         self.reorient.step(self.info.dt)
         self.controls.pitch = self.reorient.controls.pitch
