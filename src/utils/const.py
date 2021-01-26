@@ -3,7 +3,7 @@ MAX_NO_BOOST_SPEED = 1410
 BOOST_ACC = 991.667
 COAST_ACC = 525.0
 BREAK_ACC = 3500
-MIN_BOOST_TIME = 0.1
+MIN_BOOST_TIME = 10 / 120
 
 
 def throttle_acc_from_speed(speed):
