@@ -16,10 +16,9 @@ class Otter(BaseAgent):
     def initialize_agent(self):
         self.info: GameInfo = GameInfo(self)
         self.strategy: Strategy = self.pick_strategy()
-        self.field_info: FieldInfoPacket = self.get_field_info()
 
     def get_output(self, packet: GameTickPacket) -> Input:
-        self.info.update(packet, self.field_info, self.get_ball_prediction_struct())
+        self.info.update(packet, self.get_ball_prediction_struct())
 
         self.renderer.begin_rendering("path prediction")
         self.renderer.draw_polyline_3d(

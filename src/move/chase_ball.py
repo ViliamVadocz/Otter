@@ -8,10 +8,10 @@ from rlutilities.linear_algebra import dot, norm, vec3, normalize
 class ChaseBall(Move):
     def __init__(self, info: GameInfo):
         super().__init__(info)
-        self.drive = Drive(info.my_car)
+        self.drive = Drive(info.car)
 
     def update(self):
-        car: Car = self.info.my_car
+        car: Car = self.info.car
         if (
             norm(car.velocity) + car.boost / 33.3 * 1060 < 2200
             and not self.info.kickoff_pause
@@ -38,7 +38,7 @@ class ChaseBall(Move):
         )
         self.drive.speed = get_speed_from_radius(radius)
 
-        self.drive.step(self.info.time_delta)
+        self.drive.step(self.info.dt)
         self.controls = self.drive.controls
         self.controls.boost &= not car.supersonic and car.on_ground
 

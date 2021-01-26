@@ -28,7 +28,7 @@ class Drive(Move):
         self.target_speed = MAX_CAR_SPEED
 
     def update(self):
-        car = self.info.my_car
+        car = self.info.car
         car_to_target = self.target - car.position
         angle = atan2(dot(car.left(), car_to_target), dot(car.forward(), car_to_target))
         abs_angle = abs(angle)
@@ -36,7 +36,7 @@ class Drive(Move):
         # TODO A proper speed controller.
         speed = norm(car.velocity)
         self.controls.throttle, boost = speed_controller(
-            speed, self.target_speed, self.info.time_delta
+            speed, self.target_speed, self.info.dt
         )
         self.controls.boost = (
             boost and abs_angle < MAX_BOOST_ANGLE and speed < MAX_CAR_SPEED
@@ -48,7 +48,7 @@ class Drive(Move):
 
     def render(self, r: RenderingManager):
         r.draw_rect_3d(self.target, 3, 3, True, r.red())
-        r.draw_line_3d(self.info.my_car.position, self.target, r.white())
+        r.draw_line_3d(self.info.car.position, self.target, r.white())
 
 
 def speed_controller(

@@ -14,7 +14,7 @@ class SoccarStrategy(Strategy):
         return Recovery(self.info)
 
     def find_interrupt_move(self) -> Optional[Move]:
-        if self.info.my_car.on_ground and not isinstance(self.move, Aerial):
+        if self.info.car.on_ground and not isinstance(self.move, Aerial):
             # frame = self.info.ball_prediction.slices[120]
             # target = vec3(
             #     frame.physics.location.x,

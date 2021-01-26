@@ -32,8 +32,8 @@ class Aerial(Move):
         self.jumped = False
         self.jump_timer = 0.0
 
-        self.aerial = RLUAerial(self.info.my_car)
-        self.aerial.target = self.target
+        self.aerial = RLUAerial(self.info.car)
+        self.aerial.target_position = self.target
         self.aerial.arrival_time = arrival_time
 
         self.drive = Drive(
@@ -45,11 +45,11 @@ class Aerial(Move):
     def update(self):
 
         if self.in_air:
-            self.aerial.step(self.info.time_delta)
+            self.aerial.step(self.info.dt)
             self.controls = self.aerial.controls
             self.finished = (
                 self.aerial.finished
-                or self.info.my_car.on_ground
+                or self.info.car.on_ground
                 or self.info.time > self.arrival_time
             )
 
@@ -69,10 +69,10 @@ class Aerial(Move):
             else:
                 self.in_air = True
 
-            self.jump_timer += self.info.time_delta
+            self.jump_timer += self.info.dt
 
         else:
-            car = self.info.my_car
+            car = self.info.car
             time_left = self.arrival_time - self.info.time
             flat_displacement = flatten_by_normal_to_level(
                 self.target - car.position, car.up(), car.position
@@ -96,6 +96,6 @@ class Aerial(Move):
     def render(self, r: RenderingManager):
         if self.in_air:
             r.draw_rect_3d(self.target, 3, 3, True, r.red())
-            r.draw_line_3d(self.info.my_car.position, self.target, r.white())
+            r.draw_line_3d(self.info.car.position, self.target, r.white())
         else:
             self.drive.render(r)

@@ -6,7 +6,7 @@ from move.move import Move
 from utils.const import MAX_CAR_SPEED
 from utils.vectors import flatten_by_normal
 from utils.game_info import GameInfo
-from rlutilities.mechanics import AerialTurn
+from rlutilities.mechanics import Reorient  # TODO Replace with ReorientML once it works
 from rlutilities.simulation import Field, sphere
 from rlutilities.linear_algebra import (
     dot,
@@ -32,10 +32,10 @@ MIN_LANDING_DIST = 300
 class Recovery(Move):
     def __init__(self, info: GameInfo):
         super().__init__(info)
-        self.turn = AerialTurn(info.my_car)
+        self.reorient = Reorient(info.car)
 
     def update(self):
-        car = self.info.my_car
+        car = self.info.car
         landing, orientation, normal, time = self.simulate()
 
         boost = False
@@ -60,11 +60,14 @@ class Recovery(Move):
                 and angle_between(car.orientation, orientation) < MAX_BOOST_ANGLE
             )
 
-        self.turn.target = orientation
-        self.turn.step(self.info.time_delta)
-        self.controls.pitch = self.turn.controls.pitch
-        self.controls.yaw = self.turn.controls.yaw
-        self.controls.roll = self.turn.controls.roll
+        if car.id == 0:
+            print("car\n", car.orientation)
+            print("target\n", orientation)
+        self.reorient.target_orientation = orientation
+        self.reorient.step(self.info.dt)
+        self.controls.pitch = self.reorient.controls.pitch
+        self.controls.yaw = self.reorient.controls.yaw
+        self.controls.roll = self.reorient.controls.roll
         self.controls.boost = boost
         self.controls.throttle = 1.0  # Prevent turtling.
 
@@ -80,13 +83,12 @@ class Recovery(Move):
         self.finished = car.on_ground and not upside_down
 
     def simulate(self) -> Tuple[vec3, mat3, vec3, float]:
-        pos = vec3(self.info.my_car.position)
-        vel = vec3(self.info.my_car.velocity)
-        grav = vec3(0, 0, 1) * self.info.gravity
+        pos = vec3(self.info.car.position)
+        vel = vec3(self.info.car.velocity)
 
         self.sim_points = []
         for i in range(SIM_POINTS_NUM):
-            vel += grav * SIM_DT
+            vel += self.info.gravity * SIM_DT
             vel /= max(1.0, norm(vel) / MAX_CAR_SPEED)
             pos += vel * SIM_DT
 
@@ -110,7 +112,7 @@ class Recovery(Move):
                 return pos, orientation, collision_normal, SIM_DT * i
 
         # If we don't return in the loop we use the current orientation.
-        return pos, self.info.my_car.orientation, None, SIM_POINTS_NUM * SIM_DT
+        return pos, self.info.car.orientation, None, SIM_POINTS_NUM * SIM_DT
 
     def render(self, r: RenderingManager):
         if self.sim_points:

@@ -17,7 +17,7 @@ class SpeedFlip(Move):
         self.timer = 0.0
 
     def update(self):
-        car = self.info.my_car
+        car = self.info.car
 
         self.controls.throttle = 1.0
         self.controls.boost = (
@@ -43,5 +43,5 @@ class SpeedFlip(Move):
             self.controls.roll = self.direction
             self.controls.yaw = self.direction
 
-        self.timer += self.info.time_delta
+        self.timer += self.info.dt
         self.finished = (self.timer > TIMEOUT) or (car.on_ground and self.timer > 0.5)

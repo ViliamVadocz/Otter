@@ -5,63 +5,56 @@ from rlbot.utils.structures.game_data_struct import GameTickPacket, FieldInfoPac
 from rlbot.utils.structures.ball_prediction_struct import BallPrediction
 
 from utils.match_settings import Map, GameMode, ParsedMatchSettings
-from rlutilities.simulation import Car, Pad, Ball, Game
+from rlutilities.simulation import Car, Ball, Game, BoostPad, BoostPadType
 
 
 class GameInfo(Game):
     def __init__(self, agent: BaseAgent):
-        super().__init__(agent.index, agent.team)
+        super().__init__()
+        self.index = agent.index
         self.logger = agent.logger
         self.ball_prediction: BallPrediction = []
-        self.large_boost_pads: List[Pad] = []
-        self.small_boost_pads: List[Pad] = []
+        self.large_boost_pads: List[BoostPad] = []
+        self.small_boost_pads: List[BoostPad] = []
+        self.dt: float = 0.00833333333
+        self.prev_time: float = 0.0
         self.settings: ParsedMatchSettings = ParsedMatchSettings(
             agent.get_match_settings()
         )
         self.setup_mode()
+        self.read_field_info(agent.get_field_info())
 
     def update(
-        self,
-        packet: GameTickPacket,
-        field_info: FieldInfoPacket,
-        ball_prediction: BallPrediction,
+        self, packet: GameTickPacket, ball_prediction: BallPrediction,
     ):
-        self.read_game_information(packet, field_info)
+        self.read_packet(packet)
         self.ball_prediction = (
             ball_prediction  # TODO Maybe convert to RLU Ball objects.
         )
-        self.large_boost_pads = [
-            self.pads[i]
-            for i in range(field_info.num_boosts)
-            if field_info.boost_pads[i].is_full_boost
-        ]
-        self.small_boost_pads = [
-            self.pads[i]
-            for i in range(field_info.num_boosts)
-            if not field_info.boost_pads[i].is_full_boost
-        ]
+        self.large_pads = [pad for pad in self.pads if pad.type == BoostPadType.Full]
+        self.small_pads = [pad for pad in self.pads if pad.type == BoostPadType.Partial]
 
         # Invert boost pad timers.
+        # TODO Verify that this didn't change. If it did, remove.
         for pad in self.large_boost_pads:
             pad.timer = 10.0 - pad.timer
         for pad in self.small_boost_pads:
             pad.timer = 4.0 - pad.timer
 
-    def get_teammates(self, car: Car) -> List[Car]:
+        self.dt = self.time - self.prev_time
+        self.prev_time = self.time
+
+    def get_teammates(self, carol: Car) -> List[Car]:
         return [
-            self.cars[i]
-            for i in range(self.num_cars)
-            if self.cars[i].team == self.team and self.cars[i].id != car.id
+            car for car in self.cars if car.team == carol.team and car.id != carol.id
         ]
 
-    def get_opponents(self, car: Car) -> List[Car]:
-        return [
-            self.cars[i] for i in range(self.num_cars) if self.cars[i].team != car.team
-        ]
+    def get_opponents(self, carol: Car) -> List[Car]:
+        return [car for car in self.cars if car.team != carol.team]
 
     @property
-    def index(self):
-        return self.id
+    def car(self):
+        return self.cars[self.index]
 
     def setup_mode(self):
         # TODO Custom map support?
