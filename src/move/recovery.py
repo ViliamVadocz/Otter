@@ -6,7 +6,7 @@ from move.move import Move
 from utils.const import MAX_CAR_SPEED
 from utils.vectors import flatten_by_normal
 from utils.game_info import GameInfo
-from rlutilities.mechanics import Reorient  # TODO Replace with ReorientML once it works
+from rlutilities.mechanics import ReorientML as Reorient
 from rlutilities.simulation import Field, sphere
 from rlutilities.linear_algebra import (
     dot,
