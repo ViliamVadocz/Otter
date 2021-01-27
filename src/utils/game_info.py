@@ -6,6 +6,7 @@ from rlbot.utils.structures.ball_prediction_struct import BallPrediction
 
 from utils.match_settings import Map, GameMode, ParsedMatchSettings
 from rlutilities.simulation import Car, Ball, Game, BoostPad, BoostPadType
+from rlutilities.linear_algebra import vec3
 
 
 class GameInfo(Game):
@@ -13,7 +14,6 @@ class GameInfo(Game):
         super().__init__()
         self.index = agent.index
         self.logger = agent.logger
-        self.ball_prediction: BallPrediction = []
         self.large_boost_pads: List[BoostPad] = []
         self.small_boost_pads: List[BoostPad] = []
         self.dt: float = 0.00833333333
@@ -23,14 +23,14 @@ class GameInfo(Game):
         )
         self.setup_mode()
         self.read_field_info(agent.get_field_info())
+        self.setup_ball_prediction(agent.get_ball_prediction_struct())
 
     def update(
         self, packet: GameTickPacket, ball_prediction: BallPrediction,
     ):
         self.read_packet(packet)
-        self.ball_prediction = (
-            ball_prediction  # TODO Maybe convert to RLU Ball objects.
-        )
+        self.update_ball_prediction(ball_prediction)
+
         self.large_pads = [pad for pad in self.pads if pad.type == BoostPadType.Full]
         self.small_pads = [pad for pad in self.pads if pad.type == BoostPadType.Partial]
 
@@ -73,3 +73,29 @@ class GameInfo(Game):
         else:
             self.logger.warn(f"Unknown game mode: {self.settings.game_mode}")
             rlutilities.initialize("soccar")
+
+    def setup_ball_prediction(self, ball_prediction: BallPrediction):
+        self.ball_prediction: List[Ball] = [
+            Ball(self.ball) for _ in range(ball_prediction.num_slices)
+        ]
+
+    def update_ball_prediction(self, ball_prediction: BallPrediction):
+        if len(self.ball_prediction) != ball_prediction.num_slices:
+            self.setup_ball_prediction(ball_prediction)
+        for i, frame in enumerate(ball_prediction.slices[: ball_prediction.num_slices]):
+            self.ball_prediction[i].position = vec3(
+                frame.physics.location.x,
+                frame.physics.location.y,
+                frame.physics.location.z,
+            )
+            self.ball_prediction[i].velocity = vec3(
+                frame.physics.velocity.x,
+                frame.physics.velocity.y,
+                frame.physics.velocity.z,
+            )
+            self.ball_prediction[i].angular_velocity = vec3(
+                frame.physics.angular_velocity.x,
+                frame.physics.angular_velocity.y,
+                frame.physics.angular_velocity.z,
+            )
+            self.ball_prediction[i].time = frame.game_seconds

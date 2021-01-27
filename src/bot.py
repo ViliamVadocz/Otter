@@ -24,7 +24,7 @@ class Otter(BaseAgent):
 
         rendering.begin_rendering()
         rendering.draw_polyline_3d(
-            [step.physics.location for step in self.info.ball_prediction.slices][::20],
+            [ball.position for ball in self.info.ball_prediction][::20],
             rendering.cyan(),
         )
         self.strategy.update()

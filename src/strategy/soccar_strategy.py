@@ -15,12 +15,5 @@ class SoccarStrategy(Strategy):
 
     def find_interrupt_move(self) -> Optional[Move]:
         if self.info.car.on_ground and not isinstance(self.move, Aerial):
-            # frame = self.info.ball_prediction.slices[120]
-            # target = vec3(
-            #     frame.physics.location.x,
-            #     frame.physics.location.y,
-            #     frame.physics.location.z,
-            # )
-            # time = frame.game_seconds
             return Aerial(self.info, vec3(0, 0, 800), self.info.time + 3.0)
         return None
