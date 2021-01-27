@@ -5,6 +5,11 @@ COAST_ACC = 525.0
 BREAK_ACC = 3500
 MIN_BOOST_TIME = 10 / 120
 
+MAX_FIRST_JUMP_HOLD = 0.2
+MAX_JUMP_DURATION = 1.25
+JUMP_IMPULSE = 291.667
+JUMP_ACC = 1458.333374
+
 
 def throttle_acc_from_speed(speed):
     # https://samuelpmish.github.io/notes/RocketLeague/ground_control/#throttle
