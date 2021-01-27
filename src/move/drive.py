@@ -1,8 +1,7 @@
 from math import exp, atan2
 from typing import Tuple
 
-from rlbot.utils.rendering.rendering_manager import RenderingManager
-
+from utils import rendering
 from move.move import Move
 from utils.const import (
     BOOST_ACC,
@@ -46,9 +45,8 @@ class Drive(Move):
 
         self.finished = norm(car_to_target) < FINISHED_DIST
 
-    def render(self, r: RenderingManager):
-        r.draw_rect_3d(self.target, 3, 3, True, r.red())
-        r.draw_line_3d(self.info.car.position, self.target, r.white())
+        rendering.draw_rect_3d(self.target, 3, 3, True, rendering.red())
+        rendering.draw_line_3d(self.info.car.position, self.target, rendering.white())
 
 
 def speed_controller(

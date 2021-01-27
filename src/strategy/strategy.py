@@ -1,17 +1,15 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from rlbot.utils.rendering.rendering_manager import RenderingManager
-
+from utils import rendering
 from move.move import Move
 from utils.game_info import GameInfo
 from rlutilities.simulation import Input
 
 
 class Strategy(ABC):
-    def __init__(self, info: GameInfo, renderer: RenderingManager):
+    def __init__(self, info: GameInfo):
         self.info: GameInfo = info
-        self.renderer: RenderingManager = renderer
         self.move: Optional[Move] = None
         self.controls: Input = Input()
 
@@ -35,6 +33,3 @@ class Strategy(ABC):
         # Update.
         self.move.update()
         self.controls = self.move.controls
-        self.renderer.begin_rendering("move")
-        self.move.render(self.renderer)
-        self.renderer.end_rendering()

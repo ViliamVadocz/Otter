@@ -1,7 +1,6 @@
 from math import inf
 
-from rlbot.utils.rendering.rendering_manager import RenderingManager
-
+from utils import rendering
 from move.move import Move
 from move.drive import Drive
 from utils.const import MAX_CAR_SPEED
@@ -93,9 +92,8 @@ class Aerial(Move):
             ):
                 self.jumped = True
 
-    def render(self, r: RenderingManager):
         if self.in_air:
-            r.draw_rect_3d(self.target, 3, 3, True, r.red())
-            r.draw_line_3d(self.info.car.position, self.target, r.white())
-        else:
-            self.drive.render(r)
+            rendering.draw_rect_3d(self.target, 3, 3, True, rendering.red())
+            rendering.draw_line_3d(
+                self.info.car.position, self.target, rendering.white()
+            )
