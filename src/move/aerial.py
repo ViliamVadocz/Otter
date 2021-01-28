@@ -3,12 +3,11 @@ from math import inf
 from utils import rendering
 from move.move import Move
 from move.drive import Drive
-from utils.const import MAX_CAR_SPEED
 from utils.vectors import flatten_by_normal_to_level
 from utils.game_info import GameInfo
 from rlutilities.mechanics import Aerial as RLUAerial
 from rlutilities.simulation import Input
-from rlutilities.linear_algebra import dot, norm, vec2, vec3, normalize, angle_between
+from rlutilities.linear_algebra import dot, norm, vec3, normalize, angle_between
 
 MAX_SPEED_ERROR = 0.3
 SPEED_SUBTRACTANT = 300  # @r0bbi3 pls help rename this
