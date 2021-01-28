@@ -1,4 +1,4 @@
-from math import exp, atan2
+from math import pi, exp, atan2
 from typing import Tuple
 
 from utils import rendering
@@ -13,7 +13,7 @@ from utils.const import (
     throttle_acc_from_speed,
 )
 from utils.game_info import GameInfo
-from rlutilities.linear_algebra import dot, norm, vec3
+from rlutilities.linear_algebra import dot, sgn, norm, vec3
 
 MAX_BOOST_ANGLE = 0.3
 HANDBRAKE_ANGLE = 1.7
@@ -30,6 +30,8 @@ class Drive(Move):
         car = self.info.car
         car_to_target = self.target - car.position
         angle = atan2(dot(car.left(), car_to_target), dot(car.forward(), car_to_target))
+        if self.target_speed < 0:
+            angle = sgn(angle) * (pi - abs(angle))
         abs_angle = abs(angle)
 
         # TODO A proper speed controller.
