@@ -21,3 +21,11 @@ def throttle_acc_from_speed(speed):
         return -16 * speed + 22560
     else:
         return 0
+
+
+def jump_height_to_time(x):
+    a = 1.872348977e-8
+    b = -1.126747937e-5
+    c = 3.560647225e-3
+    d = -7.446058499e-3
+    return a * x ** 3 + b * x ** 2 + c * x + d

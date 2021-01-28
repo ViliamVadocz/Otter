@@ -1,4 +1,10 @@
-from const import JUMP_ACC, JUMP_IMPULSE, MAX_JUMP_DURATION, MAX_FIRST_JUMP_HOLD
+from const import (
+    JUMP_ACC,
+    JUMP_IMPULSE,
+    MAX_JUMP_DURATION,
+    MAX_FIRST_JUMP_HOLD,
+    jump_height_to_time,
+)
 
 
 class Sim:
@@ -51,14 +57,6 @@ if __name__ == "__main__":
         sim.step(dt, jump)
     # plt.plot(t, p)  # time - height
     plt.plot(p, t)  # height - time
-
-    def approximation(x):
-        a = 1.872348977e-8
-        b = -1.126747937e-5
-        c = 3.560647225e-3
-        d = -7.446058499e-3
-        return a * x ** 3 + b * x ** 2 + c * x + d
-
-    plt.plot(p, [approximation(i) for i in p])
+    plt.plot(p, [jump_height_to_time(i) for i in p])
 
     plt.show()
