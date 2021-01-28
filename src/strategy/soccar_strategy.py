@@ -1,19 +1,27 @@
 from typing import Optional
 
 from move.move import Move
-from move.aerial import Aerial
 from move.recovery import Recovery
-from move.chase_ball import ChaseBall
-from move.speed_flip import SpeedFlip
 from strategy.strategy import Strategy
-from rlutilities.linear_algebra import vec3
+from rlutilities.simulation import Ball
+from move.strike.drive_strike import DriveStrike
+from rlutilities.linear_algebra import xy, norm, vec2
 
 
 class SoccarStrategy(Strategy):
     def find_base_move(self) -> Move:
-        return Recovery(self.info)
+        target: Ball = min(
+            self.info.ball_prediction,
+            key=lambda ball: abs(
+                norm(self.info.car.position - ball.position)
+                / max(1e-10, ball.time - self.info.time)
+                - 1410
+            ),
+        )
+        goal: vec2 = xy(self.info.goals[not self.info.car.team].position)
+        return DriveStrike(self.info, target, goal)
 
     def find_interrupt_move(self) -> Optional[Move]:
-        if self.info.car.on_ground and not isinstance(self.move, Aerial):
-            return Aerial(self.info, vec3(0, 0, 800), self.info.time + 3.0)
+        if not self.info.car.on_ground and not isinstance(self.move, Recovery):
+            return Recovery(self.info)
         return None
