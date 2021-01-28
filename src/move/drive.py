@@ -17,7 +17,7 @@ from rlutilities.linear_algebra import dot, norm, vec3
 
 MAX_BOOST_ANGLE = 0.3
 HANDBRAKE_ANGLE = 1.7
-FINISHED_DIST = 100
+FINISHED_DIST = 140
 
 
 class Drive(Move):
