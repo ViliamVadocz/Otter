@@ -31,5 +31,7 @@ class Strategy(ABC):
             self.move = self.find_base_move()
 
         # Update.
+        rendering.begin_rendering("move")
         self.move.update()
+        rendering.end_rendering()
         self.controls = self.move.controls

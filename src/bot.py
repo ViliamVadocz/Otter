@@ -22,13 +22,14 @@ class Otter(BaseAgent):
     def get_output(self, packet: GameTickPacket) -> Input:
         self.info.update(packet, self.get_ball_prediction_struct())
 
-        rendering.begin_rendering()
-        rendering.draw_polyline_3d(
-            [ball.position for ball in self.info.ball_prediction][::20],
-            rendering.cyan(),
-        )
+        if len(self.info.ball_prediction) > 100:
+            rendering.begin_rendering("ball prediction")
+            rendering.draw_polyline_3d(
+                [ball.position for ball in self.info.ball_prediction][::20],
+                rendering.cyan(),
+            )
+            rendering.end_rendering()
         self.strategy.update()
-        rendering.end_rendering()
         return self.strategy.controls
 
     def pick_strategy(self) -> Strategy:
