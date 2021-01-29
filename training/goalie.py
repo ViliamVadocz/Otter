@@ -66,7 +66,7 @@ class RollingBall(GoalieExercise):
 
         car = CarState(
             physics=Physics(
-                location=Vector3(rng.uniform(-2000, 2000), -4000, 20),
+                location=Vector3(rng.uniform(-2000, 2000), -4000, 0),
                 rotation=Rotator(0, pi / 2, 0),
             )
         )
@@ -81,6 +81,8 @@ def make_default_playlist() -> Playlist:
             Path(__file__).absolute().parent.parent / "src" / "bot.cfg", Team.BLUE
         )
     ]
+    for i, player in enumerate(config):
+        player.spawn_id = i + 1
     for ex in exercises:
         ex.match_config.player_configs = config
     return exercises
