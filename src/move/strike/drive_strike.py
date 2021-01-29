@@ -1,15 +1,25 @@
+from math import pi
 from typing import Optional
 
 from utils import rendering
 from move.drive import Drive
-from utils.const import jump_height_to_time
+from utils.const import MAX_NO_BOOST_SPEED, jump_height_to_time
 from utils.game_info import GameInfo
 from move.strike.strike import Strike
 from rlutilities.mechanics import Dodge
 from rlutilities.simulation import Ball
-from rlutilities.linear_algebra import xy, dot, norm, vec2, vec3, normalize
+from rlutilities.linear_algebra import (
+    xy,
+    dot,
+    norm,
+    vec2,
+    vec3,
+    normalize,
+    angle_between,
+)
 
 OFFSET_DISTANCE: float = 115
+MAX_BACKWARDS_DIST = 1000
 
 
 class DriveStrike(Strike):
@@ -31,11 +41,19 @@ class DriveStrike(Strike):
             return
 
         # Speed calculations.
-        distance: float = norm(self.info.car.position - self.target_position)
+        car_to_target = self.target_position - self.info.car.position
+        distance: float = norm(car_to_target)
         distance -= self.info.car.hitbox_widths.x + self.info.car.hitbox_offset.x
         self.drive.target_speed = distance / max(
             1e-10, self.target.time - self.info.time
         )
+        # Going backwards.
+        if (
+            self.drive.target_speed < MAX_NO_BOOST_SPEED
+            and distance < MAX_BACKWARDS_DIST
+            and angle_between(self.info.car.forward(), car_to_target) > pi / 2
+        ):
+            self.drive.target_speed *= -1.0
 
         self.drive.update()
         self.controls = self.drive.controls
