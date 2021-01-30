@@ -8,7 +8,7 @@ FIRST_JUMP = 0.05
 NO_JUMP = 0.05
 DODGE_BACK = 0.2
 FLIP_CANCEL = 0.2
-ROTATE = 0.4
+ROTATE = 0.5
 TIMEOUT = 1.5
 
 
@@ -18,6 +18,7 @@ class HalfFlip(Move):
 
         self.timer = 0.0
         self.reorient = Reorient(self.info.car)
+        self.interruptible = False
 
     def update(self):
         self.controls = Input()
@@ -37,15 +38,8 @@ class HalfFlip(Move):
             self.controls.yaw = -1.0
             self.controls.roll = 1.0
         else:
-            # If we are still not done, use RLU Reorient to align with velocity.
-            self.reorient.target_orientation = look_at(
-                normalize(xy(self.info.car.velocity)), normalize(-1 * self.info.gravity)
-            )
-            self.reorient.step(self.info.dt)
-            self.controls = self.reorient.controls
-            self.controls.throttle = 1.0
+            # If still not on ground, we should let Recovery handle this.
+            self.finished = True
 
         self.timer += self.info.dt
-        self.finished = (self.timer > TIMEOUT) or (
-            self.info.car.on_ground and self.timer > FIRST_JUMP + NO_JUMP
-        )
+        self.finished = self.info.car.on_ground and self.timer > FIRST_JUMP + NO_JUMP
