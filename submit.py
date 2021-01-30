@@ -9,6 +9,10 @@ if __name__ == "__main__":
         # Zip the src directory.
         for folder, subfolders, file_names in os.walk("src"):
             for file_name in file_names:
+                # Ignore .pyc files (cached files)
+                _, ext = os.path.splitext(file_name)
+                if ext == ".pyc":
+                    continue
                 file_path = os.path.join(folder, file_name)
                 print(file_path)
                 zip_obj.write(file_path)
