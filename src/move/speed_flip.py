@@ -3,10 +3,11 @@ from utils.const import MAX_CAR_SPEED
 from utils.game_info import GameInfo
 from rlutilities.linear_algebra import norm
 
+STABILIZE = 0.1
 FIRST_JUMP = 0.1
 BETWEEN_JUMPS = 0.1
 SECOND_JUMP = 0.05
-TIMEOUT = 2.0
+TIMEOUT = 1.5
 
 
 class SpeedFlip(Move):
@@ -24,15 +25,19 @@ class SpeedFlip(Move):
             self.use_boost and norm(car.velocity) < MAX_CAR_SPEED - 100
         )
 
-        if self.timer < FIRST_JUMP:
+        if self.timer < STABILIZE:
+            self.controls.throttle = 1.0
+
+        elif self.timer < STABILIZE + FIRST_JUMP:
+            self.controls.throttle = 1.0
             self.controls.jump = True
             self.controls.pitch = 1.0
 
-        elif self.timer < FIRST_JUMP + BETWEEN_JUMPS:
+        elif self.timer < STABILIZE + FIRST_JUMP + BETWEEN_JUMPS:
             self.controls.jump = False
             self.controls.pitch = 1.0
 
-        elif self.timer < FIRST_JUMP + BETWEEN_JUMPS + SECOND_JUMP:
+        elif self.timer < STABILIZE + FIRST_JUMP + BETWEEN_JUMPS + SECOND_JUMP:
             self.controls.jump = True
             self.controls.pitch = -1.0
             self.controls.roll = 0.3 * self.direction
