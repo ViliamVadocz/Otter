@@ -10,6 +10,9 @@ MAX_JUMP_DURATION = 1.25
 JUMP_IMPULSE = 291.667
 JUMP_ACC = 1458.333374
 
+MAX_JUMP_HEIGHT: float = 220  # TODO Support variable gravity.
+MAX_DOUBLE_JUMP_HEIGHT: float = 440  # TODO Support variable gravity.
+
 
 def throttle_acc_from_speed(speed):
     # https://samuelpmish.github.io/notes/RocketLeague/ground_control/#throttle
@@ -25,6 +28,7 @@ def throttle_acc_from_speed(speed):
 
 def double_jump_height_to_time(x):
     # Hold for MAX_FIRST_JUMP_HOLD and then jump again right after.
+    x = max(0, min(MAX_DOUBLE_JUMP_HEIGHT, x))
     a = 1.872348977e-8
     b = -1.126747937e-5
     c = 3.560647225e-3
@@ -34,6 +38,7 @@ def double_jump_height_to_time(x):
 
 def jump_height_to_time(x):
     # Single jump estimation.
+    x = max(0, min(MAX_JUMP_HEIGHT, x))
     a = 9.4343801054e-10
     b = -3.0870839992e-7
     c = 3.1466727477e-5

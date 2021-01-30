@@ -13,6 +13,6 @@ class Strike(Move):
     def update(self):
         for ball in self.info.ball_prediction:
             if ball.time > self.target.time:
-                self.finished = norm(ball.position - self.target.position) > 15
+                self.finished = norm(ball.position - self.target.position) > 40
                 return
         self.finished = True

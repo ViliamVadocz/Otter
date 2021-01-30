@@ -4,7 +4,7 @@ from typing import List, Optional
 from move.goto import Goto
 from move.move import Move
 from move.drive import Drive
-from utils.const import BOOST_ACC, MAX_CAR_SPEED, MAX_NO_BOOST_SPEED
+from utils.const import BOOST_ACC, MAX_CAR_SPEED, MAX_JUMP_HEIGHT, MAX_NO_BOOST_SPEED
 from move.recovery import Recovery
 from strategy.strategy import Strategy
 from rlutilities.simulation import Ball, BoostPad, BoostPadType, BoostPadState
@@ -26,7 +26,7 @@ class SoccarStrategy(Strategy):
                 height: float = dot(
                     ball.position - self.info.car.position, self.info.car.up()
                 )
-                if not (0 < height < 280):
+                if not (0 < height < MAX_JUMP_HEIGHT + 60):
                     return False
                 t: float = max(1e-10, ball.time - self.info.time)
                 u: float = dot(

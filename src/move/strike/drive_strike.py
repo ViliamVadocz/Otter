@@ -18,7 +18,7 @@ from rlutilities.linear_algebra import (
     angle_between,
 )
 
-OFFSET_DISTANCE: float = 115
+OFFSET_DISTANCE: float = 120
 MAX_BACKWARDS_DIST = 1000
 MIN_BACKWARD_ANGLE = pi / 2 + 0.3
 
@@ -36,18 +36,19 @@ class DriveStrike(Strike):
     def update(self):
         super().update()
         if self.dodge:
-            self.finished = self.dodge.finished
+            if self.info.car.double_jumped:
+                self.finished = self.dodge.finished
             self.dodge.step(self.info.dt)
             self.controls = self.dodge.controls
             return
+
+        time_left: float = self.target.time - self.info.time
 
         # Speed calculations.
         car_to_target = self.target_position - self.info.car.position
         distance: float = norm(car_to_target)
         distance -= self.info.car.hitbox_widths.x + self.info.car.hitbox_offset.x
-        self.drive.target_speed = distance / max(
-            1e-10, self.target.time - self.info.time
-        )
+        self.drive.target_speed = distance / max(1e-10, time_left)
         # Going backwards.
         if (
             self.drive.target_speed < MAX_NO_BOOST_SPEED
@@ -61,31 +62,34 @@ class DriveStrike(Strike):
         self.controls = self.drive.controls
 
         # Jump calculations.
-        speed_accurate: bool = abs(
-            norm(self.info.car.velocity) - self.drive.target_speed
-        ) < 40
         if self.info.car.on_ground:
-            if speed_accurate:
+            current_velocity: float = dot(
+                normalize(self.target_position - self.info.car.position),
+                self.info.car.velocity,
+            )
+            if abs(current_velocity - abs(self.drive.target_speed)) < 100:
                 height: float = dot(
                     self.target_position - self.info.car.position, self.info.car.up()
                 )
                 time_to_height: float = jump_height_to_time(height)
-                if (
-                    time_to_height > 0.2
-                    and self.target.time - self.info.time < time_to_height + 1 / 60
-                ):
+                rendering.draw_string_3d(
+                    self.info.car.position,
+                    2,
+                    2,
+                    str(round(time_left - time_to_height, 2)) + "s",
+                    rendering.red(),
+                )
+                if time_to_height > 0.2 and time_left < time_to_height + 1 / 30:
                     self.dodge = Dodge(self.info.car)
                     self.dodge.jump_duration = 0.2
                     self.dodge.delay = max(
-                        1 / 60 + self.dodge.jump_duration,
-                        self.target.time - self.info.time,
+                        1 / 60 + self.dodge.jump_duration, time_left - 1 / 30,
                     )
                     self.dodge.direction = vec2(
                         self.target.position - self.info.car.position
                     )
                     self.dodge.step(self.info.dt)
                     self.controls = self.dodge.controls
-                    self.finished = False
                     return
         else:
             self.finished = True
