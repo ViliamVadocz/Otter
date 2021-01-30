@@ -7,3 +7,6 @@ __pycache__/
 
 # IntelliJ
 .idea/
+
+# Submission zip file
+Otter.zip
