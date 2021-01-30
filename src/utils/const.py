@@ -23,9 +23,20 @@ def throttle_acc_from_speed(speed):
         return 0
 
 
-def jump_height_to_time(x):
+def double_jump_height_to_time(x):
+    # Hold for MAX_FIRST_JUMP_HOLD and then jump again right after.
     a = 1.872348977e-8
     b = -1.126747937e-5
     c = 3.560647225e-3
     d = -7.446058499e-3
     return a * x ** 3 + b * x ** 2 + c * x + d
+
+
+def jump_height_to_time(x):
+    # Single jump estimation.
+    a = 9.4343801054e-10
+    b = -3.0870839992e-7
+    c = 3.1466727477e-5
+    d = 1.5970047137e-3
+    e = 1.5706693469e-2
+    return a * x ** 4 + b * x ** 3 + c * x ** 2 + d * x + e

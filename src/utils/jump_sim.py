@@ -46,17 +46,20 @@ if __name__ == "__main__":
 
     sim = Sim()
     dt = 1 / 120
-    t = [i * dt for i in range(int(3 * (1 / dt)))]
+    t = [i * dt for i in range(int(1 * (1 / dt)))]
     p = []
     for time in t:
         p.append(sim.pos)
-        jump = (
-            time < MAX_FIRST_JUMP_HOLD
-            or MAX_JUMP_DURATION > time > MAX_FIRST_JUMP_HOLD + 2 * dt
-        )
+        jump = True
+        # (
+        #     time < MAX_FIRST_JUMP_HOLD
+        #     or MAX_JUMP_DURATION > time > MAX_FIRST_JUMP_HOLD + 2 * dt
+        # )
         sim.step(dt, jump)
     # plt.plot(t, p)  # time - height
     plt.plot(p, t)  # height - time
     plt.plot(p, [jump_height_to_time(i) for i in p])
-
     plt.show()
+
+    for pos, time in zip(p, t):
+        print(f"{pos}, {time}")
