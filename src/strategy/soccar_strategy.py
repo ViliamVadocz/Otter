@@ -1,6 +1,7 @@
 from math import copysign
 from typing import List, Optional
 
+from move.goto import Goto
 from move.move import Move
 from move.drive import Drive
 from utils.const import BOOST_ACC, MAX_CAR_SPEED, MAX_NO_BOOST_SPEED
@@ -59,7 +60,7 @@ class SoccarStrategy(Strategy):
                             pads,
                             key=lambda pad: norm(pad.position - defensive_position),
                         )
-                        return Drive(self.info, pad.position)
+                        return Goto(self.info, pad.position)
                     elif (
                         (target.position.y - self.info.car.position.y)
                         < 0
@@ -69,7 +70,7 @@ class SoccarStrategy(Strategy):
                         backpost += 0.125 * (self.info.car.position - backpost)
                         backpost.x = copysign(750, -target.position.x)
                         backpost.z = self.info.car.hitbox_widths.z
-                        return Drive(self.info, backpost)
+                        return Goto(self.info, backpost)
         goal: vec2 = xy(self.info.goals[not self.info.car.team].position)
         return DriveStrike(self.info, target, goal)
 
