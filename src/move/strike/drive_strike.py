@@ -20,6 +20,7 @@ from rlutilities.linear_algebra import (
 
 OFFSET_DISTANCE: float = 115
 MAX_BACKWARDS_DIST = 1000
+MIN_BACKWARD_ANGLE = pi / 2 + 0.3
 
 
 class DriveStrike(Strike):
@@ -51,7 +52,8 @@ class DriveStrike(Strike):
         if (
             self.drive.target_speed < MAX_NO_BOOST_SPEED
             and distance < MAX_BACKWARDS_DIST
-            and angle_between(self.info.car.forward(), car_to_target) > pi / 2
+            and angle_between(self.info.car.forward(), car_to_target)
+            > MIN_BACKWARD_ANGLE
         ):
             self.drive.target_speed *= -1.0
 

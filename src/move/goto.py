@@ -9,11 +9,12 @@ from move.speed_flip import SpeedFlip
 from utils.game_info import GameInfo
 from rlutilities.linear_algebra import dot, norm, vec3, normalize, angle_between
 
-MIN_SPEED_FLIP_DIST = 2000
+MIN_SPEED_FLIP_DIST = 2500
 MIN_SPEED_FLIP_SPEED = 700
 MAX_SPEED_FLIP_ANGLE = 0.3
 MIN_HALF_FLIP_DIST = 800
 MIN_HALF_FLIP_SPEED = 400
+MIN_BACKWARD_ANGLE = pi / 2 + 0.3
 
 
 class Goto(Move):
@@ -46,7 +47,7 @@ class Goto(Move):
                 self.info.car.on_ground
                 and dot(normalize(-1 * self.info.gravity), self.info.car.up()) > 0.8
             )
-            if angle > pi / 2:
+            if angle > MIN_BACKWARD_ANGLE:
                 if (
                     grounded
                     and distance > MIN_HALF_FLIP_DIST
