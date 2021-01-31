@@ -29,6 +29,23 @@ class Otter(BaseAgent):
                 rendering.cyan(),
             )
             rendering.end_rendering()
+            rendering.begin_rendering("goal prediction")
+            if self.info.goal_prediction:
+                rendering.draw_rect_3d(
+                    self.info.goal_prediction.ball.position,
+                    10,
+                    10,
+                    True,
+                    rendering.white(),
+                )
+                rendering.draw_string_3d(
+                    self.info.goal_prediction.ball.position,
+                    2,
+                    2,
+                    f"{self.info.goal_prediction.ball.time - self.info.time:.2f}",
+                    rendering.white(),
+                )
+            rendering.end_rendering()
         self.strategy.update()
         return self.strategy.controls
 

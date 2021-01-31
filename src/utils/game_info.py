@@ -5,6 +5,7 @@ from rlbot.utils.structures.game_data_struct import GameTickPacket, FieldInfoPac
 from rlbot.utils.structures.ball_prediction_struct import BallPrediction
 
 from utils.match_settings import Map, GameMode, ParsedMatchSettings
+from utils.goal_prediction import GoalPrediction, get_goal_prediction
 from rlutilities.simulation import Car, Ball, Game, BoostPad, BoostPadType
 from rlutilities.linear_algebra import vec3
 
@@ -18,6 +19,7 @@ class GameInfo(Game):
         self.small_boost_pads: List[BoostPad] = []
         self.dt: float = 0.00833333333
         self.prev_time: float = 0.0
+        self.goal_prediction: Optional[GoalPrediction] = None
         self.settings: ParsedMatchSettings = ParsedMatchSettings(
             agent.get_match_settings()
         )
@@ -30,6 +32,8 @@ class GameInfo(Game):
     ):
         self.read_packet(packet)
         self.update_ball_prediction(ball_prediction)
+        # Sort of expensive and it is not needed yet.
+        # self.goal_prediction = get_goal_prediction(self.ball_prediction, self.goals)
 
         self.large_pads = [pad for pad in self.pads if pad.type == BoostPadType.Full]
         self.small_pads = [pad for pad in self.pads if pad.type == BoostPadType.Partial]
