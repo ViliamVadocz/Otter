@@ -62,10 +62,8 @@ class SoccarStrategy(Strategy):
                         )
                         return Goto(self.info, pad.position)
                     elif (
-                        (target.position.y - self.info.car.position.y)
-                        < 0
-                        == self.info.car.team
-                    ):
+                        (target.position.y - self.info.car.position.y) < 0
+                    ) == self.info.car.team:
                         backpost: vec3 = vec3(our_goal_position)
                         backpost += 0.125 * (self.info.car.position - backpost)
                         backpost.x = copysign(750, -target.position.x)
