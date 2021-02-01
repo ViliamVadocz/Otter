@@ -9,7 +9,6 @@ NO_JUMP = 0.05
 DODGE_BACK = 0.2
 FLIP_CANCEL = 0.2
 ROTATE = 0.5
-TIMEOUT = 1.5
 
 
 class HalfFlip(Move):
@@ -23,17 +22,20 @@ class HalfFlip(Move):
     def update(self):
         self.controls = Input()
         if self.timer < FIRST_JUMP:
-            self.controlsthrottle = -1.0
+            self.controls.throttle = -1.0
             self.controls.jump = True
         elif self.timer < FIRST_JUMP + NO_JUMP:
+            self.controls.throttle = -1.0
             self.controls.jump = False
             self.controls.pitch = 1.0
         elif self.timer < FIRST_JUMP + NO_JUMP + DODGE_BACK:
             self.controls.jump = True
             self.controls.pitch = 1.0
         elif self.timer < FIRST_JUMP + NO_JUMP + DODGE_BACK + FLIP_CANCEL:
+            self.controls.throttle = 1.0
             self.controls.pitch = -1.0
         elif self.timer < FIRST_JUMP + NO_JUMP + DODGE_BACK + FLIP_CANCEL + ROTATE:
+            self.controls.throttle = 1.0
             self.controls.pitch = -1.0
             self.controls.yaw = -1.0
             self.controls.roll = 1.0
