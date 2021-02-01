@@ -4,7 +4,6 @@ from typing import List, Optional
 from move.goto import Goto
 from move.move import Move
 from move.drive import Drive
-from utils.const import BOOST_ACC, MAX_CAR_SPEED, MAX_JUMP_HEIGHT, MAX_NO_BOOST_SPEED
 from move.recovery import Recovery
 from strategy.strategy import Strategy
 from rlutilities.simulation import Ball, BoostPad, BoostPadType, BoostPadState
@@ -21,26 +20,12 @@ class SoccarStrategy(Strategy):
         if norm(xy(self.info.ball.position)) < 1:
             target = self.info.ball
         else:
-
-            def can_intercept(ball: Ball) -> bool:
-                height: float = dot(
-                    ball.position - self.info.car.position, self.info.car.up()
-                )
-                if not (0 < height < MAX_JUMP_HEIGHT + 60):
-                    return False
-                t: float = max(1e-10, ball.time - self.info.time)
-                u: float = dot(
-                    self.info.car.velocity,
-                    normalize(ball.position - self.info.car.position),
-                )
-                s: float = norm(ball.position - self.info.car.position) - abs(height)
-                return (2 * s) / t - u < 0.95 * max(
-                    MAX_NO_BOOST_SPEED,
-                    min(MAX_CAR_SPEED, abs(u) + self.info.car.boost / 33 * BOOST_ACC),
-                )
-
             target: Ball = next(
-                (ball for ball in self.info.ball_prediction if can_intercept(ball)),
+                (
+                    ball
+                    for ball in self.info.ball_prediction
+                    if DriveStrike.valid_target(self.info.car, ball.position, ball.time)
+                ),
                 self.info.ball_prediction[-1],
             )
 

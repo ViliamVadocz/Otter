@@ -3,11 +3,17 @@ from typing import Optional
 
 from utils import rendering
 from move.drive import Drive
-from utils.const import MAX_NO_BOOST_SPEED, jump_height_to_time
+from utils.const import (
+    BOOST_ACC,
+    MAX_CAR_SPEED,
+    MAX_JUMP_HEIGHT,
+    MAX_NO_BOOST_SPEED,
+    jump_height_to_time,
+)
 from utils.game_info import GameInfo
 from move.strike.strike import Strike
 from rlutilities.mechanics import Dodge
-from rlutilities.simulation import Ball
+from rlutilities.simulation import Car, Ball
 from rlutilities.linear_algebra import (
     xy,
     dot,
@@ -98,3 +104,17 @@ class DriveStrike(Strike):
             self.info.car.position, self.target.position, rendering.green()
         )
         rendering.draw_rect_3d(self.target.position, 2, 2, True, rendering.green())
+
+    @staticmethod
+    def valid_target(car: Car, target: vec3, time: float) -> bool:
+        height: float = dot(target - car.position, car.up())
+        if not (0 < height < MAX_JUMP_HEIGHT + 60):
+            return False
+        t: float = max(1e-10, time - car.time)
+        u: float = dot(
+            car.velocity, normalize(target - car.position),
+        )
+        s: float = norm(target - car.position) - abs(height)
+        return (2 * s) / t - u < 0.95 * max(
+            MAX_NO_BOOST_SPEED, min(MAX_CAR_SPEED, abs(u) + car.boost / 33 * BOOST_ACC),
+        )

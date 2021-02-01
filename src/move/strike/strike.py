@@ -1,7 +1,9 @@
+from abc import abstractmethod
+
 from move.move import Move
 from utils.game_info import GameInfo
-from rlutilities.simulation import Ball
-from rlutilities.linear_algebra import norm
+from rlutilities.simulation import Car, Ball
+from rlutilities.linear_algebra import norm, vec3
 
 
 class Strike(Move):
@@ -16,3 +18,8 @@ class Strike(Move):
                 self.finished = norm(ball.position - self.target.position) > 40
                 return
         self.finished = True
+
+    @staticmethod
+    @abstractmethod
+    def valid_target(car: Car, target: vec3, time: float) -> bool:
+        pass
