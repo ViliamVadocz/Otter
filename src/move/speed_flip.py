@@ -13,7 +13,7 @@ TIMEOUT = 1.5
 class SpeedFlip(Move):
     def __init__(self, info: GameInfo, spin_right=True, use_boost=True):
         super().__init__(info)
-        self.direction = 1 if spin_right else -1
+        self.direction = 1.0 if spin_right else -1.0
         self.use_boost = use_boost
         self.timer = 0.0
 
@@ -26,10 +26,9 @@ class SpeedFlip(Move):
         )
 
         if self.timer < STABILIZE:
-            self.controls.throttle = 1.0
+            pass
 
         elif self.timer < STABILIZE + FIRST_JUMP:
-            self.controls.throttle = 1.0
             self.controls.jump = True
             self.controls.pitch = 1.0
 
