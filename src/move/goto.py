@@ -2,7 +2,7 @@ from math import pi
 from typing import Optional
 
 from move.move import Move
-from move.drive import FINISHED_DIST, Drive
+from move.drive import Drive
 from utils.const import MAX_CAR_SPEED, MAX_NO_BOOST_SPEED
 from move.half_flip import HalfFlip
 from move.speed_flip import SpeedFlip
@@ -62,10 +62,13 @@ class Goto(Move):
                     and forward_speed > MIN_SPEED_FLIP_SPEED
                     and angle < MAX_SPEED_FLIP_ANGLE
                 ):
-                    self.speed_flip = SpeedFlip(self.info)
+                    left: bool = dot(
+                        self.target - self.info.car.position, self.info.car.left()
+                    )
+                    self.speed_flip = SpeedFlip(self.info, spin_right=not left)
                 self.drive.target_speed = MAX_CAR_SPEED
             self.drive.update()
             self.controls = self.drive.controls
 
         self.interruptible = self.half_flip is None and self.speed_flip is None
-        self.finished = distance < FINISHED_DIST
+        self.finished = self.drive.finished  # and self.interruptible

@@ -10,6 +10,7 @@ from utils.const import (
     MAX_CAR_SPEED,
     MIN_BOOST_TIME,
     MAX_NO_BOOST_SPEED,
+    get_speed_from_radius,
     throttle_acc_from_speed,
 )
 from utils.game_info import GameInfo
@@ -17,14 +18,17 @@ from rlutilities.linear_algebra import dot, sgn, norm, vec3
 
 MAX_BOOST_ANGLE = 0.3
 HANDBRAKE_ANGLE = 1.7
-FINISHED_DIST = 140
+DEFAULT_FINISHED_DIST: float = 140
 
 
 class Drive(Move):
-    def __init__(self, info: GameInfo, target: vec3):
+    def __init__(
+        self, info: GameInfo, target: vec3, finished_dist: float = DEFAULT_FINISHED_DIST
+    ):
         super().__init__(info)
         self.target = target
-        self.target_speed = MAX_CAR_SPEED
+        self.target_speed: float = MAX_CAR_SPEED
+        self.finished_dist: float = finished_dist
 
     def update(self):
         car = self.info.car
@@ -34,10 +38,24 @@ class Drive(Move):
             angle = sgn(angle) * (pi - abs(angle))
         abs_angle = abs(angle)
 
+        # Clamp speed to maximum speed available due to target radius.
+        local_radius: vec3 = dot(car.orientation, self.target - car.position)
+        max_speed: float = abs(self.target_speed)
+        for inaccuracy_sign in (-1, 2, 1):
+            radius: float = (local_radius.x ** 2 + local_radius.y ** 2) / (
+                2
+                * max(
+                    1e-10,
+                    abs(local_radius.y) + inaccuracy_sign * self.finished_dist / 2,
+                )
+            )
+            max_speed: float = max(max_speed, get_speed_from_radius(radius))
+        desired_speed: float = max(-max_speed, min(max_speed, self.target_speed))
+
         # TODO A proper speed controller.
         speed = norm(car.velocity)
         self.controls.throttle, boost = speed_controller(
-            speed, self.target_speed, self.info.dt
+            speed, desired_speed, self.info.dt
         )
         self.controls.boost = (
             boost and abs_angle < MAX_BOOST_ANGLE and speed < MAX_CAR_SPEED
@@ -45,7 +63,7 @@ class Drive(Move):
         self.controls.steer = 2 / (1 + exp(-5.0 * angle)) - 1
         self.controls.handbrake = abs_angle > HANDBRAKE_ANGLE
 
-        self.finished = norm(car_to_target) < FINISHED_DIST
+        self.finished = norm(car_to_target) < self.finished_dist
 
         rendering.draw_rect_3d(self.target, 3, 3, True, rendering.red())
         rendering.draw_line_3d(self.info.car.position, self.target, rendering.white())

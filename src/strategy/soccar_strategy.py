@@ -3,12 +3,12 @@ from typing import List, Optional
 
 from move.goto import Goto
 from move.move import Move
-from move.drive import Drive
 from move.recovery import Recovery
+from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
-from rlutilities.simulation import Ball, BoostPad, BoostPadType, BoostPadState
+from rlutilities.simulation import Ball, BoostPad, BoostPadState
 from move.strike.drive_strike import DriveStrike
-from rlutilities.linear_algebra import xy, dot, norm, vec2, vec3, normalize
+from rlutilities.linear_algebra import xy, norm, vec2, vec3
 
 
 class SoccarStrategy(Strategy):
@@ -45,15 +45,17 @@ class SoccarStrategy(Strategy):
                             pads,
                             key=lambda pad: norm(pad.position - defensive_position),
                         )
-                        return Goto(self.info, pad.position)
+                        return PickupBoost(self.info, pad)
                     elif (
-                        (target.position.y - self.info.car.position.y) < 0
+                        (target.position.y - self.info.car.position.y) > 0
                     ) == self.info.car.team:
                         backpost: vec3 = vec3(our_goal_position)
                         backpost += 0.125 * (self.info.car.position - backpost)
                         backpost.x = copysign(750, -target.position.x)
                         backpost.z = self.info.car.hitbox_widths.z
-                        return Goto(self.info, backpost)
+                        go_backpost: Goto = Goto(self.info, backpost)
+                        go_backpost.drive.finished_dist = 800
+                        return go_backpost
         goal: vec2 = xy(self.info.goals[not self.info.car.team].position)
         return DriveStrike(self.info, target, goal)
 

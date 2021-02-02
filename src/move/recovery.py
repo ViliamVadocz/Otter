@@ -22,7 +22,7 @@ from rlutilities.linear_algebra import (
 SIM_POINTS_NUM = 200
 SIM_DT = 1.0 / 30.0
 SIM_SPHERE_R = 40
-LOOK_DOWN_TIME = 0.6
+LOOK_DOWN_TIME = 1.1
 MAX_BOOST_ANGLE = 0.1
 MIN_BOOST = 0
 MIN_LANDING_DIST = 300

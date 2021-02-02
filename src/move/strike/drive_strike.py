@@ -40,15 +40,15 @@ class DriveStrike(Strike):
         self.dodge: Optional[Dodge] = None
 
     def update(self):
+        time_left: float = self.target.time - self.info.time
+
         super().update()
         if self.dodge:
-            if self.info.car.double_jumped:
-                self.finished = self.dodge.finished
             self.dodge.step(self.info.dt)
             self.controls = self.dodge.controls
+            if time_left < 1 / 15:
+                self.finished = self.dodge.finished
             return
-
-        time_left: float = self.target.time - self.info.time
 
         # Speed calculations.
         car_to_target = self.target_position - self.info.car.position
