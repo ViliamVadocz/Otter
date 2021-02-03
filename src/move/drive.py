@@ -17,7 +17,7 @@ from utils.game_info import GameInfo
 from rlutilities.linear_algebra import dot, sgn, norm, vec3
 
 MAX_BOOST_ANGLE = 0.3
-HANDBRAKE_ANGLE = 1.7
+HANDBRAKE_ANGLE = 1.5
 DEFAULT_FINISHED_DIST: float = 140
 
 
@@ -60,8 +60,15 @@ class Drive(Move):
         self.controls.boost = (
             boost and abs_angle < MAX_BOOST_ANGLE and speed < MAX_CAR_SPEED
         )
+
+        # Steering.
         self.controls.steer = 2 / (1 + exp(-5.0 * angle)) - 1
         self.controls.handbrake = abs_angle > HANDBRAKE_ANGLE and car.up().z > 0.8
+        if self.controls.handbrake:
+            if dot(car.velocity, car.forward()) * self.target_speed < 0:
+                self.controls.handbrake = False
+            if dot(car.angular_velocity, car.up()) * angle * self.target_speed < 0:
+                self.controls.handbrake = False
 
         self.finished = norm(car_to_target) < self.finished_dist
 
