@@ -9,6 +9,7 @@ MAX_FIRST_JUMP_HOLD = 0.2
 MAX_JUMP_DURATION = 1.25
 JUMP_IMPULSE = 291.667
 JUMP_ACC = 1458.333374
+DODGE_IMPULSE: float = 500
 
 MAX_JUMP_HEIGHT: float = 220  # TODO Support variable gravity.
 MAX_DOUBLE_JUMP_HEIGHT: float = 440  # TODO Support variable gravity.
