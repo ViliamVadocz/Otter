@@ -65,7 +65,7 @@ class Goto(Move):
                     left: bool = dot(
                         self.target - self.info.car.position, self.info.car.left()
                     ) > 0
-                    left = not left  # TODO Seems backwards.
+                    left = not left  # RLU is weird and left() is actually points right
                     self.speed_flip = SpeedFlip(self.info, spin_right=not left)
                 self.drive.target_speed = MAX_CAR_SPEED
             self.drive.update()
