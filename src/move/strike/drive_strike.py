@@ -10,6 +10,7 @@ from utils.const import (
     MAX_NO_BOOST_SPEED,
     jump_height_to_time,
 )
+from utils.aiming import get_offset_direction
 from utils.game_info import GameInfo
 from move.strike.strike import Strike
 from rlutilities.mechanics import Dodge
@@ -24,7 +25,7 @@ from rlutilities.linear_algebra import (
     angle_between,
 )
 
-OFFSET_DISTANCE: float = 120
+OFFSET_DISTANCE: float = 130
 MAX_BACKWARDS_DIST = 1000
 MIN_BACKWARD_ANGLE = pi / 2 + 0.3
 
@@ -33,8 +34,8 @@ class DriveStrike(Strike):
     def __init__(self, info: GameInfo, target: Ball, goal: vec2):
         super().__init__(info, target)
         self.target_position: vec3 = vec3(self.target.position)
-        self.target_position += (
-            normalize(xy(self.target_position - goal)) * OFFSET_DISTANCE
+        self.target_position += OFFSET_DISTANCE * vec3(
+            get_offset_direction(info.car.position, target, goal)
         )
         self.drive: Drive = Drive(info, self.target_position)
         self.dodge: Optional[Dodge] = None
@@ -92,7 +93,7 @@ class DriveStrike(Strike):
                         1 / 60 + self.dodge.jump_duration, time_left - 1 / 30,
                     )
                     self.dodge.direction = vec2(
-                        self.target.position - self.info.car.position
+                        self.target.position - self.target_position
                     )
                     self.dodge.step(self.info.dt)
                     self.controls = self.dodge.controls
