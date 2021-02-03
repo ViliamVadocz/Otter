@@ -61,7 +61,7 @@ class Drive(Move):
             boost and abs_angle < MAX_BOOST_ANGLE and speed < MAX_CAR_SPEED
         )
         self.controls.steer = 2 / (1 + exp(-5.0 * angle)) - 1
-        self.controls.handbrake = abs_angle > HANDBRAKE_ANGLE
+        self.controls.handbrake = abs_angle > HANDBRAKE_ANGLE and car.up().z > 0.8
 
         self.finished = norm(car_to_target) < self.finished_dist
 
