@@ -32,6 +32,13 @@ class Strategy(ABC):
 
         # Update.
         rendering.begin_rendering("move")
+        rendering.draw_string_3d(
+            self.info.car.position,
+            1,
+            1,
+            str(self.move.__class__.__name__),
+            rendering.white(),
+        )
         self.move.update()
         rendering.end_rendering()
         self.controls = self.move.controls
