@@ -7,7 +7,3 @@ def dist(a: vec3, b: vec3) -> float:
 
 def flatten_by_normal(vec: vec3, normal: vec3) -> vec3:
     return vec - dot(vec, normal) * normal
-
-
-def flatten_by_normal_to_level(vec: vec3, normal: vec3, pos: vec3) -> vec3:
-    return vec + dot(pos - vec, normal) * normal

@@ -12,7 +12,7 @@ from utils.const import (
     double_jump_height_to_time,
 )
 from utils.aiming import get_offset_direction
-from utils.vectors import flatten_by_normal_to_level
+from utils.vectors import flatten_by_normal
 from utils.game_info import GameInfo
 from move.double_jump import DoubleJump
 from move.strike.strike import Strike
@@ -53,19 +53,17 @@ class DoubleJumpStrike(Strike):
 
         # Pretty much the same as DriveStrike.
         # Speed calculations.
-        car_to__flat_target = flatten_by_normal_to_level(
-            self.target_position - self.info.car.position,
-            self.info.car.up(),
-            self.info.car.position,
+        car_to_flat_target = flatten_by_normal(
+            self.target_position - self.info.car.position, self.info.car.up(),
         )
-        distance: float = norm(car_to__flat_target)
+        distance: float = norm(car_to_flat_target)
         distance -= self.info.car.hitbox_widths.x + self.info.car.hitbox_offset.x
         self.drive.target_speed = distance / max(1e-10, time_left)
         # Going backwards.
         if (
             self.drive.target_speed < MAX_NO_BOOST_SPEED
             and distance < MAX_BACKWARDS_DIST
-            and angle_between(self.info.car.forward(), car_to__flat_target)
+            and angle_between(self.info.car.forward(), car_to_flat_target)
             > MIN_BACKWARD_ANGLE
         ):
             self.drive.target_speed *= -1.0
@@ -75,7 +73,7 @@ class DoubleJumpStrike(Strike):
 
         # Jump calculations.
         if self.info.car.on_ground:
-            direction = normalize(car_to__flat_target)
+            direction = normalize(car_to_flat_target)
             current_velocity: float = dot(
                 direction, self.info.car.velocity,
             )
