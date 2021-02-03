@@ -21,31 +21,7 @@ class Otter(BaseAgent):
 
     def get_output(self, packet: GameTickPacket) -> Input:
         self.info.update(packet, self.get_ball_prediction_struct())
-
-        if len(self.info.ball_prediction) > 100:
-            rendering.begin_rendering("ball prediction")
-            rendering.draw_polyline_3d(
-                [ball.position for ball in self.info.ball_prediction][::20],
-                rendering.cyan(),
-            )
-            rendering.end_rendering()
-            rendering.begin_rendering("goal prediction")
-            if self.info.goal_prediction:
-                rendering.draw_rect_3d(
-                    self.info.goal_prediction.ball.position,
-                    10,
-                    10,
-                    True,
-                    rendering.white(),
-                )
-                rendering.draw_string_3d(
-                    self.info.goal_prediction.ball.position,
-                    2,
-                    2,
-                    f"{self.info.goal_prediction.ball.time - self.info.time:.2f}",
-                    rendering.white(),
-                )
-            rendering.end_rendering()
+        self.render()
         self.strategy.update()
         return self.strategy.controls
 
@@ -53,3 +29,51 @@ class Otter(BaseAgent):
         if self.info.settings.game_mode == GameMode.Soccer:
             return SoccarStrategy(self.info)
         return DefaultStrategy(self.info)
+
+    def render(self):
+        AXES_LEN = 150
+        rendering.begin_rendering("orientation")
+        rendering.draw_line_3d(
+            self.info.car.position,
+            self.info.car.position + AXES_LEN * self.info.car.left(),
+            rendering.red(),
+        )
+        rendering.draw_line_3d(
+            self.info.car.position,
+            self.info.car.position + AXES_LEN * self.info.car.forward(),
+            rendering.blue(),
+        )
+        rendering.draw_line_3d(
+            self.info.car.position,
+            self.info.car.position + AXES_LEN * self.info.car.up(),
+            rendering.green(),
+        )
+        rendering.end_rendering()
+
+        MIN_PREDICTION = 100
+        PREDICTION_STEP = 20
+        if len(self.info.ball_prediction) > MIN_PREDICTION:
+
+            rendering.begin_rendering("ball prediction")
+            rendering.draw_polyline_3d(
+                [ball.position for ball in self.info.ball_prediction][
+                    ::PREDICTION_STEP
+                ],
+                rendering.cyan(),
+            )
+            rendering.end_rendering()
+
+            rendering.begin_rendering("goal prediction")
+            if self.info.goal_prediction:
+                ball = self.info.goal_prediction.ball
+                rendering.draw_rect_3d(
+                    ball.position, 10, 10, True, rendering.white(),
+                )
+                rendering.draw_string_3d(
+                    ball.position,
+                    2,
+                    2,
+                    f"{ball.time - self.info.time:.2f}",
+                    rendering.white(),
+                )
+            rendering.end_rendering()
