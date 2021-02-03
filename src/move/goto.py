@@ -62,10 +62,11 @@ class Goto(Move):
                     and forward_speed > MIN_SPEED_FLIP_SPEED
                     and angle < MAX_SPEED_FLIP_ANGLE
                 ):
-                    left: float = dot(
+                    left: bool = dot(
                         self.target - self.info.car.position, self.info.car.left()
-                    )
-                    self.speed_flip = SpeedFlip(self.info, spin_right=(left < 0))
+                    ) > 0
+                    left = not left  # TODO Seems backwards.
+                    self.speed_flip = SpeedFlip(self.info, spin_right=not left)
                 self.drive.target_speed = MAX_CAR_SPEED
             self.drive.update()
             self.controls = self.drive.controls
