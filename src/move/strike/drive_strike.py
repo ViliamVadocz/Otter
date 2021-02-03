@@ -79,13 +79,6 @@ class DriveStrike(Strike):
                     self.target_position - self.info.car.position, self.info.car.up()
                 )
                 time_to_height: float = jump_height_to_time(height)
-                rendering.draw_string_3d(
-                    self.info.car.position,
-                    2,
-                    2,
-                    str(round(time_left - time_to_height, 2)) + "s",
-                    rendering.red(),
-                )
                 if time_to_height > 0.2 and time_left < time_to_height + 1 / 30:
                     self.dodge = Dodge(self.info.car)
                     self.dodge.jump_duration = 0.2
