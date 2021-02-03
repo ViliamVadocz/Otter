@@ -1,3 +1,4 @@
+from math import sqrt
 from typing import Tuple
 
 from utils import rendering
@@ -105,5 +106,27 @@ class Recovery(Move):
                 # fmt: on
                 return pos, orientation, collision_normal, SIM_DT * i
 
-        # If we don't return in the loop we use the current orientation.
-        return pos, self.info.car.orientation, None, SIM_POINTS_NUM * SIM_DT
+        # If we don't return in the loop, assume we will follow a parabola and land on flat-ground at z=0.
+        time: float = -(
+            sqrt(
+                2
+                * self.info.gravity.z
+                * (self.info.car.hitbox_widths.z - self.info.car.position.z)
+                + self.info.car.velocity.z ** 2
+            )
+            + self.info.car.velocity.z
+        ) / self.info.gravity.z
+        pos: vec3 = self.info.car.position + self.info.car.velocity * time + 0.5 * self.info.gravity * time ** 2
+        vel: vec3 = self.info.car.velocity + self.info.gravity * time
+        collision_normal: vec3 = vec3(0, 0, 1)
+        # Flatten velocity with regards to normal to get forward.
+        forward = normalize(flatten_by_normal(vel, collision_normal))
+        left = cross(collision_normal, forward)
+        # fmt: off
+        orientation = mat3(
+            forward[0], left[0], collision_normal[0],
+            forward[1], left[1], collision_normal[1],
+            forward[2], left[2], collision_normal[2],
+        )
+        # fmt: on
+        return pos, orientation, collision_normal, time
