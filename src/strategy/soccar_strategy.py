@@ -76,7 +76,7 @@ class SoccarStrategy(Strategy):
             return go_backpost
         else:
             go_offensive = Goto(self.info, ball.position)
-            go_offensive.drive.finished_dist = 1500
+            go_offensive.drive.finished_dist = 2000
             return go_offensive
 
     def find_interrupt_move(self) -> Optional[Move]:

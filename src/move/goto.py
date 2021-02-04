@@ -4,6 +4,7 @@ from typing import Optional
 from move.move import Move
 from move.drive import Drive
 from utils.const import DODGE_IMPULSE, MAX_CAR_SPEED, MAX_NO_BOOST_SPEED
+from utils.vectors import flatten_by_normal
 from move.half_flip import HalfFlip
 from move.speed_flip import SpeedFlip
 from utils.game_info import GameInfo
@@ -24,7 +25,9 @@ class Goto(Move):
         self.speed_flip: Optional[SpeedFlip] = None
 
     def update(self):
-        car_to_target = self.target - self.info.car.position
+        car_to_target = flatten_by_normal(
+            self.target - self.info.car.position, self.info.car.up()
+        )
         distance = norm(car_to_target)
 
         if self.half_flip is not None:
@@ -59,18 +62,19 @@ class Goto(Move):
             else:
                 if (
                     grounded
-                    and distance > flip_distance * 1.2
+                    and max(0, distance - self.drive.finished_dist)
+                    > flip_distance * 1.2
                     and forward_speed > MIN_SPEED_FLIP_SPEED
                     and angle < MAX_SPEED_FLIP_ANGLE
                 ):
                     left: bool = dot(
                         self.target - self.info.car.position, self.info.car.left()
                     ) > 0
-                    left = not left  # RLU is weird and left() is actually points right
-                    self.speed_flip = SpeedFlip(self.info, spin_right=not left)
+                    # RLU is weird and left() actually points right.
+                    self.speed_flip = SpeedFlip(self.info, spin_right=left)
                 self.drive.target_speed = MAX_CAR_SPEED
             self.drive.update()
             self.controls = self.drive.controls
 
         self.interruptible = self.half_flip is None and self.speed_flip is None
-        self.finished = self.drive.finished  # and self.interruptible
+        self.finished = self.drive.finished and self.interruptible
