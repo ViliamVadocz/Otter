@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from move.goto import Goto
 from move.move import Move
+from move.drive import Drive
 from move.recovery import Recovery
 from utils.vectors import dist
 from move.pickup_boost import PickupBoost
@@ -20,15 +21,15 @@ class SoccarStrategy(Strategy):
 
         # TODO Kickoff.
         if self.info.state == GameState.Kickoff:
-            go_kickoff: Goto = Goto(
+            drive_kickoff: Drive = Drive(
                 self.info, vec3(0, 0, self.info.car.hitbox_widths.z)
             )
-            go_kickoff.drive.finished_dist = (
+            drive_kickoff.finished_dist = (
                 self.info.ball.collision_radius
                 + self.info.car.hitbox_widths.x
                 + self.info.car.hitbox_offset.x
             )
-            return go_kickoff
+            return drive_kickoff
 
         target: Ball = next(
             (
