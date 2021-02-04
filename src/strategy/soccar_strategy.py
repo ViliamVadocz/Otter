@@ -4,6 +4,7 @@ from typing import List, Optional
 from move.goto import Goto
 from move.move import Move
 from move.recovery import Recovery
+from utils.vectors import dist
 from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
 from rlutilities.simulation import Ball, BoostPad, BoostPadState
@@ -65,7 +66,7 @@ class SoccarStrategy(Strategy):
                         self.info.car.position + our_goal_position
                     ) / 2
                     pad: BoostPad = min(
-                        pads, key=lambda pad: norm(pad.position - defensive_position),
+                        pads, key=lambda pad: dist(pad.position, defensive_position),
                     )
                     return PickupBoost(self.info, pad)
                 elif (

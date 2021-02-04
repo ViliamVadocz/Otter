@@ -4,7 +4,7 @@ from typing import Tuple
 from utils import rendering
 from move.move import Move
 from utils.const import MAX_CAR_SPEED
-from utils.vectors import flatten_by_normal
+from utils.vectors import dist, flatten_by_normal
 from utils.game_info import GameInfo
 from rlutilities.mechanics import ReorientML as Reorient
 from rlutilities.simulation import Field, sphere
@@ -42,7 +42,7 @@ class Recovery(Move):
         if (
             car.boost > MIN_BOOST
             and time > LOOK_DOWN_TIME
-            and norm(landing - car.position) > MIN_LANDING_DIST
+            and dist(landing, car.position) > MIN_LANDING_DIST
         ):
             if normal is not None:
                 # Boost in opposite direction to normal

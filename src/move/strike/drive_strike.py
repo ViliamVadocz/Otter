@@ -7,7 +7,7 @@ from utils.const import BOOST_ACC, MAX_CAR_SPEED
 from utils.const import MAX_JUMP_HEIGHT as MAX_JUMP_HEIGHT_CONST
 from utils.const import MAX_NO_BOOST_SPEED, jump_height_to_time
 from utils.aiming import get_offset_direction
-from utils.vectors import flatten_by_normal
+from utils.vectors import dist, flatten_by_normal
 from utils.game_info import GameInfo
 from move.strike.strike import Strike
 from rlutilities.mechanics import Dodge
@@ -114,7 +114,7 @@ class DriveStrike(Strike):
         u: float = dot(
             car.velocity, normalize(target - car.position),
         )
-        s: float = norm(target - car.position) - abs(height)
+        s: float = dist(target, car.position) - abs(height)
         return (2 * s) / t - u < 0.95 * max(
             MAX_NO_BOOST_SPEED, min(MAX_CAR_SPEED, abs(u) + car.boost / 33 * BOOST_ACC),
         )

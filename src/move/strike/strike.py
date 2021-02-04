@@ -1,9 +1,12 @@
 from abc import abstractmethod
 
 from move.move import Move
+from utils.vectors import dist
 from utils.game_info import GameInfo
 from rlutilities.simulation import Car, Ball
 from rlutilities.linear_algebra import norm, vec3
+
+BALL_CHANGED_DIST = 40
 
 
 class Strike(Move):
@@ -15,7 +18,9 @@ class Strike(Move):
     def update(self):
         for ball in self.info.ball_prediction:
             if ball.time > self.target.time:
-                self.finished = norm(ball.position - self.target.position) > 40
+                self.finished = (
+                    dist(ball.position, self.target.position) > BALL_CHANGED_DIST
+                )
                 return
         self.finished = True
 
