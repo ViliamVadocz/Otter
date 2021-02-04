@@ -4,7 +4,6 @@ from typing import Any, Union, Callable, Optional
 from utils import rendering
 from move.drive import Drive
 from utils.const import BOOST_ACC, MAX_CAR_SPEED
-from utils.const import MAX_JUMP_HEIGHT
 from utils.const import MAX_JUMP_HEIGHT as MAX_JUMP_HEIGHT_CONST
 from utils.const import MAX_NO_BOOST_SPEED, jump_height_to_time
 from utils.aiming import get_offset_direction
@@ -51,7 +50,9 @@ class DriveStrike(Strike):
         # Calculations.
         car_to_target = self.target_position - self.info.car.position
         height: float = dot(car_to_target, self.info.car.up())
-        if not self.MIN_JUMP_HEIGHT < height < MAX_JUMP_HEIGHT:
+        if not (
+            self.__class__.MIN_JUMP_HEIGHT < height < self.__class__.MAX_JUMP_HEIGHT
+        ):
             self.finished = True
         car_to_target_flat = flatten_by_normal(car_to_target, self.info.car.up())
         distance: float = norm(car_to_target_flat)
