@@ -1,5 +1,5 @@
 from math import pi
-from typing import Callable, Optional
+from typing import Any, Union, Callable, Optional
 
 from utils import rendering
 from move.drive import Drive
@@ -7,19 +7,12 @@ from utils.const import BOOST_ACC, MAX_CAR_SPEED
 from utils.const import MAX_JUMP_HEIGHT as MAX_JUMP_HEIGHT_CONST
 from utils.const import MAX_NO_BOOST_SPEED, jump_height_to_time
 from utils.aiming import get_offset_direction
+from utils.vectors import flatten_by_normal
 from utils.game_info import GameInfo
 from move.strike.strike import Strike
 from rlutilities.mechanics import Dodge
 from rlutilities.simulation import Car, Ball
-from rlutilities.linear_algebra import (
-    xy,
-    dot,
-    norm,
-    vec2,
-    vec3,
-    normalize,
-    angle_between,
-)
+from rlutilities.linear_algebra import dot, norm, vec2, vec3, normalize, angle_between
 
 OFFSET_DISTANCE: float = 130
 MAX_BACKWARDS_DIST = 1000
@@ -38,7 +31,7 @@ class DriveStrike(Strike):
             get_offset_direction(info.car.position, target, goal)
         )
         self.drive: Drive = Drive(info, self.target_position)
-        self.jump: Optional = None
+        self.jump: Optional[Union[Dodge, Any]] = None
 
     def update(self):
         time_left: float = self.target.time - self.info.time
@@ -57,7 +50,8 @@ class DriveStrike(Strike):
         # Calculations.
         car_to_target = self.target_position - self.info.car.position
         height: float = dot(car_to_target, self.info.car.up())
-        distance: float = norm(car_to_target - height * self.info.car.up())
+        car_to_target_flat = flatten_by_normal(car_to_target, self.info.car.up())
+        distance: float = norm(car_to_target_flat)
         distance -= self.info.car.hitbox_widths.x + self.info.car.hitbox_offset.x
         self.drive.target_speed = distance / max(1e-10, time_left)
 
@@ -65,7 +59,7 @@ class DriveStrike(Strike):
         if (
             self.drive.target_speed < MAX_NO_BOOST_SPEED
             and distance < MAX_BACKWARDS_DIST
-            and angle_between(self.info.car.forward(), car_to_target)
+            and angle_between(self.info.car.forward(), car_to_target_flat)
             > MIN_BACKWARD_ANGLE
         ):
             self.drive.target_speed *= -1.0
@@ -76,11 +70,10 @@ class DriveStrike(Strike):
         # Jump execution.
         if self.info.car.on_ground:
             current_velocity: float = dot(
-                normalize(car_to_target - self.info.car.up() * height),
-                self.info.car.velocity,
+                normalize(car_to_target_flat), self.info.car.velocity,
             )
             if abs(current_velocity * time_left - distance) < 30:
-                time_to_height: float = self.__class__.JUMP_HEIGHT_TO_TIME(height)
+                time_to_height: float = self.JUMP_HEIGHT_TO_TIME(height)
                 if time_to_height > 0.2 and time_left < time_to_height + 1 / 30:
                     self.start_jump(time_left)
                     return
