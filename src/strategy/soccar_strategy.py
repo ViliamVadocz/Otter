@@ -1,6 +1,7 @@
 from math import copysign
 from typing import List, Optional
 
+from utils import rendering
 from move.goto import Goto
 from move.move import Move
 from move.drive import Drive
@@ -10,8 +11,14 @@ from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
 from rlutilities.simulation import Ball, BoostPad, GameState, BoostPadState
 from move.strike.drive_strike import DriveStrike
-from rlutilities.linear_algebra import xy, norm, vec2, vec3
+from rlutilities.linear_algebra import xy, dot, norm, vec2, vec3, normalize
 from move.strike.double_jump_strike import DoubleJumpStrike
+
+MAX_STRIKE_TIME = 1.5
+MAX_BALL_X_DIST = 3000
+LOW_BOOST_AMOUNT = 35
+BACKPOST_OFFSET_X = 150
+BACKPOST_GOAL_CAR_LERP_Y = 0.125
 
 
 class SoccarStrategy(Strategy):
@@ -31,58 +38,43 @@ class SoccarStrategy(Strategy):
             )
             return drive_kickoff
 
-        target: Ball = next(
-            (
-                ball
-                for ball in self.info.ball_prediction
-                if DriveStrike.valid_target(self.info.car, ball.position, ball.time)
-            ),
-            self.info.ball_prediction[-1],
-        )
+        opponent_goal: vec2 = self.info.goals[not self.info.car.team].position
+        for ball in self.info.ball_prediction:
+            if (
+                ball.time - self.info.time > MAX_STRIKE_TIME
+                and abs(ball.position.x) > MAX_BALL_X_DIST
+            ):
+                break
+            if DriveStrike.valid_target(self.info.car, ball.position, ball.time):
+                return DriveStrike(self.info, ball, xy(opponent_goal))
+            if DoubleJumpStrike.valid_target(self.info.car, ball.position, ball.time):
+                return DoubleJumpStrike(self.info, ball, xy(opponent_goal))
+        # `ball` is still defined as the last one we iterated over
 
-        double_jump_target: Ball = next(
-            (
-                ball
-                for ball in self.info.ball_prediction
-                if DoubleJumpStrike.valid_target(
-                    self.info.car, ball.position, ball.time
-                )
-            ),
-            self.info.ball_prediction[-1],
-        )
-        if double_jump_target.time < target.time - 0.5:
-            goal: vec2 = xy(self.info.goals[not self.info.car.team].position)
-            return DoubleJumpStrike(self.info, double_jump_target, goal)
-
-        if target.time - self.info.time > 0.6:
-            pads: List[BoostPad] = [
-                pad
-                for pad in self.info.large_pads
-                if pad.state == BoostPadState.Available
-            ]
-            our_goal_position: vec2 = self.info.goals[self.info.car.team].position
-            if abs(target.position.x) > 3000:
-                if self.info.car.boost < 35 and pads:
-                    defensive_position: vec3 = (
-                        self.info.car.position + our_goal_position
-                    ) / 2
-                    pad: BoostPad = min(
-                        pads, key=lambda pad: dist(pad.position, defensive_position),
-                    )
-                    return PickupBoost(self.info, pad)
-                elif (
-                    (target.position.y - self.info.car.position.y) > 0
-                ) == self.info.car.team:
-                    backpost: vec3 = vec3(our_goal_position)
-                    backpost += 0.125 * (self.info.car.position - backpost)
-                    backpost.x = copysign(750, -target.position.x)
-                    backpost.z = self.info.car.hitbox_widths.z
-                    go_backpost: Goto = Goto(self.info, backpost)
-                    go_backpost.drive.finished_dist = 800
-                    return go_backpost
-
-        goal: vec2 = xy(self.info.goals[not self.info.car.team].position)
-        return DriveStrike(self.info, target, goal)
+        pads: List[BoostPad] = [
+            pad for pad in self.info.large_pads if pad.state == BoostPadState.Available
+        ]
+        our_goal: vec3 = self.info.goals[self.info.car.team].position
+        goal_width = self.info.goals[self.info.car.team].width
+        if self.info.car.boost < LOW_BOOST_AMOUNT and pads:
+            defensive_position: vec3 = (self.info.car.position + our_goal) / 2
+            pad: BoostPad = min(
+                pads, key=lambda pad: dist(pad.position, defensive_position)
+            )
+            return PickupBoost(self.info, pad)
+        elif dot(our_goal, self.info.car.position - ball.position) < 0:
+            backpost = our_goal + BACKPOST_GOAL_CAR_LERP_Y * (
+                self.info.car.position - our_goal
+            )
+            backpost.x = copysign(goal_width - BACKPOST_OFFSET_X, -ball.position.x)
+            backpost.z = self.info.car.hitbox_widths.z
+            go_backpost: Goto = Goto(self.info, backpost)
+            go_backpost.drive.finished_dist = 800
+            return go_backpost
+        else:
+            go_offensive = Goto(self.info, ball.position)
+            go_offensive.drive.finished_dist = 1500
+            return go_offensive
 
     def find_interrupt_move(self) -> Optional[Move]:
         if not self.info.car.on_ground and not isinstance(self.move, Recovery):
