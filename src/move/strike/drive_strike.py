@@ -51,11 +51,13 @@ class DriveStrike(Strike):
                 self.finished = self.dodge.finished
             return
 
-        # Speed calculations.
+        # Calculations.
         car_to_target = self.target_position - self.info.car.position
-        distance: float = norm(car_to_target)
+        height: float = dot(car_to_target, self.info.car.up())
+        distance: float = norm(car_to_target - height * self.info.car.up())
         distance -= self.info.car.hitbox_widths.x + self.info.car.hitbox_offset.x
         self.drive.target_speed = distance / max(1e-10, time_left)
+
         # Going backwards.
         if (
             self.drive.target_speed < MAX_NO_BOOST_SPEED
@@ -68,16 +70,13 @@ class DriveStrike(Strike):
         self.drive.update()
         self.controls = self.drive.controls
 
-        # Jump calculations.
+        # Jump execution.
         if self.info.car.on_ground:
             current_velocity: float = dot(
-                normalize(self.target_position - self.info.car.position),
+                normalize(car_to_target - self.info.car.up() * height),
                 self.info.car.velocity,
             )
-            if abs(current_velocity - abs(self.drive.target_speed)) < 100:
-                height: float = dot(
-                    self.target_position - self.info.car.position, self.info.car.up()
-                )
+            if abs(current_velocity * time_left - distance) < 30:
                 time_to_height: float = jump_height_to_time(height)
                 if time_to_height > 0.2 and time_left < time_to_height + 1 / 30:
                     self.dodge = Dodge(self.info.car)
@@ -94,10 +93,22 @@ class DriveStrike(Strike):
         else:
             self.finished = True
 
+        # Rendering.
         rendering.draw_line_3d(
-            self.info.car.position, self.target.position, rendering.green()
+            self.info.car.position,
+            self.info.car.position + normalize(self.info.car.velocity) * distance,
+            rendering.red(),
         )
-        rendering.draw_rect_3d(self.target.position, 2, 2, True, rendering.green())
+        rendering.draw_line_3d(
+            self.info.car.position,
+            self.info.car.position + self.info.car.velocity * time_left,
+            rendering.pink(),
+        )
+        rendering.draw_line_3d(
+            self.target_position,
+            self.target_position - height * self.info.car.up(),
+            rendering.white(),
+        )
 
     @staticmethod
     def valid_target(car: Car, target: vec3, time: float) -> bool:
