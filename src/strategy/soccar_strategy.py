@@ -11,7 +11,7 @@ from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
 from rlutilities.simulation import Ball, BoostPad, GameState, BoostPadState
 from move.strike.drive_strike import DriveStrike
-from rlutilities.linear_algebra import xy, dot, norm, vec2, vec3, normalize
+from rlutilities.linear_algebra import xy, dot, vec3
 from move.strike.double_jump_strike import DoubleJumpStrike
 
 MAX_STRIKE_TIME = 1.5
@@ -38,7 +38,7 @@ class SoccarStrategy(Strategy):
             )
             return drive_kickoff
 
-        opponent_goal: vec2 = self.info.goals[not self.info.car.team].position
+        opponent_goal: vec3 = self.info.goals[not self.info.car.team].position
         for ball in self.info.ball_prediction:
             if (
                 ball.time - self.info.time > MAX_STRIKE_TIME
