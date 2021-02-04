@@ -7,7 +7,7 @@ from move.recovery import Recovery
 from utils.vectors import dist
 from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
-from rlutilities.simulation import Ball, BoostPad, BoostPadState
+from rlutilities.simulation import Ball, BoostPad, GameState, BoostPadState
 from move.strike.drive_strike import DriveStrike
 from rlutilities.linear_algebra import xy, norm, vec2, vec3
 from move.strike.double_jump_strike import DoubleJumpStrike
@@ -19,7 +19,7 @@ class SoccarStrategy(Strategy):
             return Recovery(self.info)
 
         # TODO Kickoff.
-        if norm(xy(self.info.ball.position)) < 1:
+        if self.info.state == GameState.Kickoff:
             go_kickoff: Goto = Goto(
                 self.info, vec3(0, 0, self.info.car.hitbox_widths.z)
             )
