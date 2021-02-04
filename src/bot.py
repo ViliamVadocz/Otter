@@ -21,7 +21,16 @@ class Otter(BaseAgent):
 
     def get_output(self, packet: GameTickPacket) -> Input:
         self.info.update(packet, self.get_ball_prediction_struct())
-        self.render()
+        # Only render as the lowest index Otter
+        if (
+            min(
+                index
+                for index, car in enumerate(packet.game_cars[: packet.num_cars])
+                if "Otter" in car.name
+            )
+            == self.index
+        ):
+            self.render()
         self.strategy.update()
         return self.strategy.controls
 
@@ -34,7 +43,6 @@ class Otter(BaseAgent):
         MIN_PREDICTION = 100
         PREDICTION_STEP = 20
         if len(self.info.ball_prediction) > MIN_PREDICTION:
-
             rendering.begin_rendering("ball prediction")
             rendering.draw_polyline_3d(
                 [ball.position for ball in self.info.ball_prediction][
