@@ -11,7 +11,7 @@ from rlutilities.linear_algebra import dot, norm, vec3, normalize, angle_between
 
 MIN_SPEED_FLIP_SPEED = 700
 MAX_SPEED_FLIP_ANGLE = 0.3
-MIN_HALF_FLIP_SPEED = 400
+MIN_HALF_FLIP_SPEED = 600
 MIN_BACKWARD_ANGLE = pi / 2 + 0.3
 
 
