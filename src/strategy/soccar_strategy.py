@@ -9,6 +9,7 @@ from strategy.strategy import Strategy
 from rlutilities.simulation import Ball, BoostPad, BoostPadState
 from move.strike.drive_strike import DriveStrike
 from rlutilities.linear_algebra import xy, norm, vec2, vec3
+from move.strike.double_jump_strike import DoubleJumpStrike
 
 
 class SoccarStrategy(Strategy):
@@ -36,6 +37,20 @@ class SoccarStrategy(Strategy):
             ),
             self.info.ball_prediction[-1],
         )
+
+        double_jump_target: Ball = next(
+            (
+                ball
+                for ball in self.info.ball_prediction
+                if DoubleJumpStrike.valid_target(
+                    self.info.car, ball.position, ball.time
+                )
+            ),
+            self.info.ball_prediction[-1],
+        )
+        if double_jump_target.time < target.time - 0.5:
+            goal: vec2 = xy(self.info.goals[not self.info.car.team].position)
+            return DoubleJumpStrike(self.info, double_jump_target, goal)
 
         if target.time - self.info.time > 0.6:
             pads: List[BoostPad] = [

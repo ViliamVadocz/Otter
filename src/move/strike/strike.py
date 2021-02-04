@@ -19,7 +19,7 @@ class Strike(Move):
                 return
         self.finished = True
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def valid_target(car: Car, target: vec3, time: float) -> bool:
+    def valid_target(cls, car: Car, target: vec3, time: float) -> bool:
         pass
