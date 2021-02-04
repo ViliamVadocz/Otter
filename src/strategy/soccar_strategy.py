@@ -16,9 +16,8 @@ class SoccarStrategy(Strategy):
         if not self.info.car.on_ground:
             return Recovery(self.info)
 
-        target: Ball = None
         if norm(xy(self.info.ball.position)) < 1:
-            target = self.info.ball
+            target: Ball = self.info.ball
         else:
             target: Ball = next(
                 (

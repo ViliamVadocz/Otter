@@ -1,11 +1,11 @@
 from rlbot.agents.base_agent import BaseAgent
-from rlbot.utils.structures.game_data_struct import GameTickPacket, FieldInfoPacket
+from rlbot.utils.structures.game_data_struct import GameTickPacket
 
 from utils import rendering
 from utils.game_info import GameInfo
 from strategy.strategy import Strategy
 from utils.match_settings import GameMode
-from rlutilities.simulation import Input
+from rlutilities.simulation import Game, Input
 from strategy.soccar_strategy import SoccarStrategy
 from strategy.default_strategy import DefaultStrategy
 
@@ -31,25 +31,6 @@ class Otter(BaseAgent):
         return DefaultStrategy(self.info)
 
     def render(self):
-        AXES_LEN = 150
-        rendering.begin_rendering("orientation")
-        rendering.draw_line_3d(
-            self.info.car.position,
-            self.info.car.position + AXES_LEN * self.info.car.left(),
-            rendering.red(),
-        )
-        rendering.draw_line_3d(
-            self.info.car.position,
-            self.info.car.position + AXES_LEN * self.info.car.forward(),
-            rendering.blue(),
-        )
-        rendering.draw_line_3d(
-            self.info.car.position,
-            self.info.car.position + AXES_LEN * self.info.car.up(),
-            rendering.green(),
-        )
-        rendering.end_rendering()
-
         MIN_PREDICTION = 100
         PREDICTION_STEP = 20
         if len(self.info.ball_prediction) > MIN_PREDICTION:
