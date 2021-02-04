@@ -73,7 +73,7 @@ class DriveStrike(Strike):
                 normalize(car_to_target_flat), self.info.car.velocity,
             )
             if abs(current_velocity * time_left - distance) < 30:
-                time_to_height: float = self.JUMP_HEIGHT_TO_TIME(height)
+                time_to_height: float = self.__class__.JUMP_HEIGHT_TO_TIME(height)
                 if time_to_height > 0.2 and time_left < time_to_height + 1 / 30:
                     self.start_jump(time_left)
                     return
