@@ -22,7 +22,7 @@ from rlutilities.linear_algebra import (
     angle_between,
 )
 
-OFFSET_DISTANCE: float = 130
+OFFSET_DISTANCE: float = Ball.collision_radius + 35
 MAX_BACKWARDS_DIST = 1000
 MIN_BACKWARD_ANGLE = pi / 2 + 0.3
 
