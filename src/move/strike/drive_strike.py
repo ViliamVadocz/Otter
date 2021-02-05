@@ -12,7 +12,15 @@ from utils.game_info import GameInfo
 from move.strike.strike import Strike
 from rlutilities.mechanics import Dodge
 from rlutilities.simulation import Car, Ball
-from rlutilities.linear_algebra import dot, norm, vec2, vec3, normalize, angle_between
+from rlutilities.linear_algebra import (
+    xy,
+    dot,
+    norm,
+    vec2,
+    vec3,
+    normalize,
+    angle_between,
+)
 
 OFFSET_DISTANCE: float = 130
 MAX_BACKWARDS_DIST = 1000
@@ -24,11 +32,11 @@ class DriveStrike(Strike):
     MAX_JUMP_HEIGHT: float = MAX_JUMP_HEIGHT_CONST + 60
     JUMP_HEIGHT_TO_TIME: Callable[[float], float] = jump_height_to_time
 
-    def __init__(self, info: GameInfo, target: Ball, goal: vec2):
+    def __init__(self, info: GameInfo, target: Ball, goal: vec3):
         super().__init__(info, target)
         self.target_position: vec3 = vec3(self.target.position)
         self.target_position += OFFSET_DISTANCE * vec3(
-            get_offset_direction(info.car.position, target, goal)
+            get_offset_direction(info.car.position, target, xy(goal))
         )
         self.drive: Drive = Drive(info, self.target_position)
         self.jump: Optional[Union[Dodge, Any]] = None

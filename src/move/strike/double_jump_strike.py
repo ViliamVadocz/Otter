@@ -7,7 +7,7 @@ from utils.game_info import GameInfo
 from move.double_jump import DoubleJump
 from rlutilities.simulation import Ball
 from move.strike.drive_strike import DriveStrike
-from rlutilities.linear_algebra import vec2
+from rlutilities.linear_algebra import vec3
 
 
 class DoubleJumpStrike(DriveStrike):
@@ -15,7 +15,7 @@ class DoubleJumpStrike(DriveStrike):
     MAX_JUMP_HEIGHT: float = MAX_DOUBLE_JUMP_HEIGHT_CONST + 60
     JUMP_HEIGHT_TO_TIME: Callable[[float], float] = double_jump_height_to_time
 
-    def __init__(self, info: GameInfo, target: Ball, goal: vec2):
+    def __init__(self, info: GameInfo, target: Ball, goal: vec3):
         super().__init__(info, target, goal)
 
     def start_jump(self, time_left: float):

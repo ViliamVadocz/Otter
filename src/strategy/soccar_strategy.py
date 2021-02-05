@@ -49,9 +49,9 @@ class SoccarStrategy(Strategy):
             ):
                 break
             if DriveStrike.valid_target(self.info.car, ball.position, ball.time):
-                return DriveStrike(self.info, ball, xy(opponent_goal))
+                return DriveStrike(self.info, ball, opponent_goal)
             if DoubleJumpStrike.valid_target(self.info.car, ball.position, ball.time):
-                return DoubleJumpStrike(self.info, ball, xy(opponent_goal))
+                return DoubleJumpStrike(self.info, ball, opponent_goal)
         # `ball` is still defined as the last one we iterated over
 
         pads: List[BoostPad] = [
@@ -76,7 +76,7 @@ class SoccarStrategy(Strategy):
             return go_backpost
         else:
             go_offensive = Goto(self.info, ball.position)
-            go_offensive.drive.finished_dist = 2000
+            go_offensive.drive.finished_dist = 3000
             return go_offensive
 
     def find_interrupt_move(self) -> Optional[Move]:
