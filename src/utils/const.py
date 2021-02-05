@@ -7,6 +7,7 @@ THROTTLE_ACC_IN_AIR = 66.66667
 COAST_ACC = 525.0
 BREAK_ACC = 3500
 MIN_BOOST_TIME = 10 / 120
+BOOST_USAGE = 100 / 3  # boost per sec
 
 MAX_FIRST_JUMP_HOLD = 0.2
 MAX_JUMP_DURATION = 1.25
@@ -50,10 +51,6 @@ def jump_height_to_time(x):
     d = 1.5970047137e-3
     e = 1.5706693469e-2
     return a * x ** 4 + b * x ** 3 + c * x ** 2 + d * x + e
-
-
-def aerial_height_to_time(x, g=-650):
-    return sqrt(2 * x / (BOOST_ACC + THROTTLE_ACC_IN_AIR + g))
 
 
 def get_speed_from_radius(radius: float) -> float:
