@@ -10,3 +10,6 @@ __pycache__/
 
 # Submission zip file
 Otter.zip
+
+# Profiling
+profile_data/
