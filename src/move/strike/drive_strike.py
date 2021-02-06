@@ -67,9 +67,9 @@ class DriveStrike(Strike):
         distance: float = norm(car_to_target_flat)
         distance -= self.info.car.hitbox_widths.x + self.info.car.hitbox_offset.x
         # TODO Properly handle getting stuck on walls with bad orientation
-        self.drive.target_speed = norm(self.target_position - self.info.car) / max(
-            1e-10, time_left
-        )
+        self.drive.target_speed = dist(
+            self.target_position, self.info.car.position
+        ) / max(1e-10, time_left)
 
         # Going backwards.
         if (
