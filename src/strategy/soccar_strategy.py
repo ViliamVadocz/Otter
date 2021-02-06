@@ -4,12 +4,14 @@ from typing import List, Optional
 from move.goto import Goto
 from move.move import Move
 from move.drive import Drive
+from utils.const import MAX_CAR_SPEED
 from move.recovery import Recovery
 from utils.vectors import dist
 from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
 from rlutilities.simulation import Ball, BoostPad, GameState, BoostPadState
 from move.strike.drive_strike import DriveStrike
+from move.strike.aerial_strike import AerialStrike
 from rlutilities.linear_algebra import xy, dot, norm, vec3
 from move.strike.double_jump_strike import DoubleJumpStrike
 
@@ -19,27 +21,18 @@ BACKPOST_OFFSET_X = 150
 BACKPOST_GOAL_CAR_LERP_Y = 0.125
 DOUBLE_JUMP_TIME_HANDICAP = 0.5
 STRIKE_PRIORITY_TIME = 0.6
+AERIAL_TIME_HANDICAP = 0.2
 
 
 class SoccarStrategy(Strategy):
     def find_base_move(self) -> Move:
-        if not self.info.car.on_ground:
-            return Recovery(self.info)
-
+        opponent_goal: vec3 = self.info.goals[not self.info.car.team].position
         # TODO Kickoff.
         if (
             self.info.state == GameState.Kickoff
             or norm(xy(self.info.ball.position)) < 1
         ):
-            drive_kickoff: Drive = Drive(
-                self.info, vec3(0, 0, self.info.car.hitbox_widths.z)
-            )
-            drive_kickoff.finished_dist = (
-                self.info.ball.collision_radius
-                + self.info.car.hitbox_widths.x
-                + self.info.car.hitbox_offset.x
-            )
-            return drive_kickoff
+            return DriveStrike(self.info, self.info.ball, opponent_goal)
 
         target: Ball = next(
             (
@@ -60,7 +53,20 @@ class SoccarStrategy(Strategy):
             ),
             self.info.ball_prediction[-1],
         )
-        opponent_goal: vec3 = self.info.goals[not self.info.car.team].position
+
+        aerial_target: Ball = next(
+            (
+                ball
+                for ball in self.info.ball_prediction
+                if AerialStrike.valid_target(self.info.car, ball.position, ball.time)
+            ),
+            self.info.ball_prediction[-1],
+        )
+
+        if aerial_target.time < double_jump_target.time - AERIAL_TIME_HANDICAP:
+            return AerialStrike(self.info, aerial_target, opponent_goal)
+        if not self.info.car.on_ground:
+            return Recovery(self.info)
         if double_jump_target.time < target.time - DOUBLE_JUMP_TIME_HANDICAP:
             return DoubleJumpStrike(self.info, double_jump_target, opponent_goal)
 
