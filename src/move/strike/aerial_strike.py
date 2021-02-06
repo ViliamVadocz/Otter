@@ -113,7 +113,7 @@ class AerialStrike(Strike):
         # If I am already in the air, check I am far from field.
         if not car.on_ground:
             collision_normal = Field.collide(
-                sphere(target, MIN_CAR_DIST_FROM_FIELD)
+                sphere(car.position, MIN_CAR_DIST_FROM_FIELD)
             ).direction
             if norm(collision_normal) > 0.0:
                 return False
