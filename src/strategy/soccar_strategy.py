@@ -17,7 +17,7 @@ from move.strike.double_jump_strike import DoubleJumpStrike
 
 MIN_SAFE_BALL_X = 3000
 LOW_BOOST_AMOUNT = 35
-BACKPOST_OFFSET_X = 150
+BACKPOST_OFFSET_X = 210
 BACKPOST_GOAL_CAR_LERP_Y = 0.125
 DOUBLE_JUMP_TIME_HANDICAP = 0.5
 STRIKE_PRIORITY_TIME = 0.6
@@ -91,7 +91,7 @@ class SoccarStrategy(Strategy):
                         self.info.car.position - backpost
                     )
                     backpost.x = copysign(
-                        goal_width - BACKPOST_OFFSET_X, -target.position.x
+                        goal_width / 2 - BACKPOST_OFFSET_X, -target.position.x
                     )
                     backpost.z = self.info.car.hitbox_widths.z
                     go_backpost: Goto = Goto(self.info, backpost)
