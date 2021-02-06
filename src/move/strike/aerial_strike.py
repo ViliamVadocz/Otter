@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Tuple, Optional
 
 from utils import rendering
 from move.drive import Drive
@@ -37,7 +37,7 @@ class AerialStrike(Strike):
         if time_left < 0.0:
             self.finished = True
 
-        sim_car = self.simulate(Car(self.info.car))
+        sim_car, boost_estimate = self.simulate(Car(self.info.car))
 
         if self.jump:
             self.jump.update()
@@ -67,7 +67,8 @@ class AerialStrike(Strike):
             return
 
         if (
-            dist(sim_car.position, self.target_position) < MAX_DIST_ERROR
+            boost_estimate < self.info.car.boost
+            and dist(sim_car.position, self.target_position) < MAX_DIST_ERROR
             and angle_between(self.info.car.forward(), car_to_target) < MAX_ANGLE
         ):
             self.start_jump(time_left)
@@ -79,7 +80,7 @@ class AerialStrike(Strike):
         self.jump.update()
         self.controls = self.jump.controls
 
-    def simulate(self, sim_car: Car) -> Car:
+    def simulate(self, sim_car: Car) -> Tuple[Car, float]:
         test_aerial = RLUAerial(sim_car)
         test_aerial.target_position = self.target_position
         test_aerial.arrival_time = self.target.time
@@ -87,16 +88,20 @@ class AerialStrike(Strike):
 
         DT = 1 / 120
         ticks = 0
+        boost_used = 0.0
         while not test_aerial.finished:
             test_aerial.step(DT)
             sim_car.boost = 100
             sim_car.step(test_aerial.controls, DT)
 
+            if test_aerial.controls.boost:
+                boost_used += DT * BOOST_USAGE
+
             if ticks % 4 == 0:
                 rendering.draw_rect_3d(sim_car.position, 5, 5, True, rendering.green())
             ticks += 1
 
-        return sim_car
+        return sim_car, boost_used
 
     @classmethod
     def valid_target(cls, car: Car, target: vec3, time: float) -> bool:
