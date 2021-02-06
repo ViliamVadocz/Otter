@@ -7,7 +7,7 @@ from utils.const import BOOST_ACC, BOOST_USAGE, MAX_CAR_SPEED
 from utils.const import MAX_JUMP_HEIGHT as MAX_JUMP_HEIGHT_CONST
 from utils.const import MAX_NO_BOOST_SPEED, jump_height_to_time
 from utils.aiming import get_offset_direction
-from utils.vectors import dist, flatten_by_normal
+from utils.vectors import dist, direction, flatten_by_normal
 from utils.game_info import GameInfo
 from move.strike.strike import Strike
 from rlutilities.mechanics import Dodge
@@ -25,6 +25,7 @@ from rlutilities.linear_algebra import (
 OFFSET_DISTANCE: float = Ball.collision_radius + 35
 MAX_BACKWARDS_DIST = 1000
 MIN_BACKWARD_ANGLE = pi / 2 + 0.3
+MAX_DIST_ERROR = 30
 
 
 class DriveStrike(Strike):
@@ -84,7 +85,7 @@ class DriveStrike(Strike):
             current_velocity: float = dot(
                 normalize(car_to_target_flat), self.info.car.velocity,
             )
-            if abs(current_velocity * time_left - distance) < 30:
+            if abs(current_velocity * time_left - distance) < MAX_DIST_ERROR:
                 time_to_height: float = self.__class__.JUMP_HEIGHT_TO_TIME(height)
                 if time_to_height > 0.2 and time_left < time_to_height + 1 / 30:
                     self.start_jump(time_left)
@@ -124,7 +125,7 @@ class DriveStrike(Strike):
             return False
         t: float = max(1e-10, time - car.time)
         u: float = dot(
-            car.velocity, normalize(target - car.position),
+            car.velocity, direction(car.position, target),
         )
         s: float = dist(target, car.position) - abs(height)
         return (2 * s) / t - u < 0.95 * max(
