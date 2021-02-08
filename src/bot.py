@@ -20,7 +20,7 @@ class Otter(BaseAgent):
         rendering.bind_renderer(self.renderer)
 
     def get_output(self, packet: GameTickPacket) -> Input:
-        self.info.update(packet, self.get_ball_prediction_struct())
+        self.info.update(packet)
         # Only render as the lowest index Otter
         if (
             min(
@@ -41,7 +41,7 @@ class Otter(BaseAgent):
 
     def render(self):
         MIN_PREDICTION = 100
-        PREDICTION_STEP = 20
+        PREDICTION_STEP = 50
         if len(self.info.ball_prediction) > MIN_PREDICTION:
             rendering.begin_rendering("ball prediction")
             rendering.draw_polyline_3d(

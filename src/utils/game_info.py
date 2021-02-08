@@ -2,12 +2,15 @@ from typing import List, Optional
 
 from rlbot.agents.base_agent import BaseAgent
 from rlbot.utils.structures.game_data_struct import GameTickPacket, FieldInfoPacket
-from rlbot.utils.structures.ball_prediction_struct import BallPrediction
+from rlbot.utils.structures.ball_prediction_struct import Physics, BallPrediction
 
 from utils.match_settings import Map, GameMode, ParsedMatchSettings
 from utils.goal_prediction import GoalPrediction, get_goal_prediction
 from rlutilities.simulation import Car, Ball, Game, BoostPad, BoostPadType
 from rlutilities.linear_algebra import vec3
+
+BALL_PREDICT_DT = 1 / 120
+BALL_PREDICT_NUM = 720
 
 
 class GameInfo(Game):
@@ -25,13 +28,13 @@ class GameInfo(Game):
         )
         self.setup_mode()
         self.read_field_info(agent.get_field_info())
-        self.setup_ball_prediction(agent.get_ball_prediction_struct())
+        self.reset_ball_prediction()
 
-    def update(
-        self, packet: GameTickPacket, ball_prediction: BallPrediction,
-    ):
+    def update(self, packet: GameTickPacket):
         self.read_packet(packet)
-        self.update_ball_prediction(ball_prediction)
+        if self.frame == 0:
+            print("hi")
+        self.reset_ball_prediction()
         # Sort of expensive and it is not needed yet.
         # self.goal_prediction = get_goal_prediction(self.ball_prediction, self.goals)
 
@@ -78,28 +81,26 @@ class GameInfo(Game):
             self.logger.warn(f"Unknown game mode: {self.settings.game_mode}")
             rlutilities.initialize("soccar")
 
-    def setup_ball_prediction(self, ball_prediction: BallPrediction):
-        self.ball_prediction: List[Ball] = [
-            Ball(self.ball) for _ in range(ball_prediction.num_slices)
-        ]
+    def reset_ball_prediction(self):
+        self.ball_prediction: List[Ball] = []
+        ball = Ball(self.ball)
+        for _ in range(BALL_PREDICT_NUM):
+            self.ball_prediction.append(ball)
+            ball = Ball(ball)
+            ball.step(BALL_PREDICT_DT)
 
-    def update_ball_prediction(self, ball_prediction: BallPrediction):
-        if len(self.ball_prediction) != ball_prediction.num_slices:
-            self.setup_ball_prediction(ball_prediction)
-        for i, frame in enumerate(ball_prediction.slices[: ball_prediction.num_slices]):
-            self.ball_prediction[i].position = vec3(
-                frame.physics.location.x,
-                frame.physics.location.y,
-                frame.physics.location.z,
-            )
-            self.ball_prediction[i].velocity = vec3(
-                frame.physics.velocity.x,
-                frame.physics.velocity.y,
-                frame.physics.velocity.z,
-            )
-            self.ball_prediction[i].angular_velocity = vec3(
-                frame.physics.angular_velocity.x,
-                frame.physics.angular_velocity.y,
-                frame.physics.angular_velocity.z,
-            )
-            self.ball_prediction[i].time = frame.game_seconds
+    def update_ball_prediction(self):
+        if close_ball(self.ball, self.ball_prediction[1]):
+            self.ball_prediction[:-1] = self.ball_prediction[1:]
+            self.ball_prediction[-1].step(BALL_PREDICT_DT)
+        else:
+            self.setup_ball_prediction()
+
+
+def close_ball(predicted: Ball, actual: Ball) -> bool:
+    return (
+        abs(predicted.velocity.x - actual.velocity.x)
+        + abs(predicted.velocity.y - actual.velocity.y)
+        + abs(predicted.velocity.z - actual.velocity.z)
+        < 10.0
+    )
