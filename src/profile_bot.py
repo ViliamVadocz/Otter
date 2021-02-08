@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import cProfile
 from pstats import Stats, SortKey
 from shutil import rmtree
@@ -58,7 +59,12 @@ if __name__ == "__main__":
     except Exception as err:
         print(err)
 
+    time.sleep(2)
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     print("Combining frame profile data")
+    print("Please wait, it might take a minute")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
     ps = Stats()
     for file in os.listdir(PROFILE_DATA_DIR):
         path_to_file = PROFILE_DATA_DIR / file
