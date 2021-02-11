@@ -10,6 +10,7 @@ from utils.vectors import dist
 from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
 from rlutilities.simulation import Ball, BoostPad, GameState, BoostPadState
+from move.kickoff.do_kickoff import DoKickoff
 from move.strike.drive_strike import DriveStrike
 from move.strike.aerial_strike import AerialStrike
 from rlutilities.linear_algebra import xy, dot, norm, vec3
@@ -28,11 +29,8 @@ class SoccarStrategy(Strategy):
     def find_base_move(self) -> Move:
         opponent_goal: vec3 = self.info.goals[not self.info.car.team].position
         # TODO Kickoff.
-        if (
-            self.info.state == GameState.Kickoff
-            or norm(xy(self.info.ball.position)) < 1
-        ):
-            return DriveStrike(self.info, self.info.ball, opponent_goal)
+        if self.info.state == GameState.Inactive:
+            return DoKickoff(self.info)
 
         target: Ball = next(
             (
