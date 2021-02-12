@@ -28,7 +28,7 @@ MIN_BACKWARD_ANGLE = pi / 2 + 0.3
 MAX_DIST_ERROR = 30
 
 
-class DriveStrike(Strike):
+class JumpStrike(Strike):
     MIN_JUMP_HEIGHT: float = 0
     MAX_JUMP_HEIGHT: float = MAX_JUMP_HEIGHT_CONST + 60
     JUMP_HEIGHT_TO_TIME: Callable[[float], float] = jump_height_to_time

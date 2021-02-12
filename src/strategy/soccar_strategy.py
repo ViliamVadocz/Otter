@@ -11,7 +11,7 @@ from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
 from rlutilities.simulation import Ball, BoostPad, GameState, BoostPadState
 from move.kickoff.do_kickoff import DoKickoff
-from move.strike.drive_strike import DriveStrike
+from move.strike.jump_strike import JumpStrike
 from move.strike.aerial_strike import AerialStrike
 from rlutilities.linear_algebra import xy, dot, norm, vec3
 from move.strike.double_jump_strike import DoubleJumpStrike
@@ -36,7 +36,7 @@ class SoccarStrategy(Strategy):
             (
                 ball
                 for ball in self.info.ball_prediction
-                if DriveStrike.valid_target(self.info.car, ball.position, ball.time)
+                if JumpStrike.valid_target(self.info.car, ball.position, ball.time)
             ),
             self.info.ball_prediction[-1],
         )
@@ -96,7 +96,7 @@ class SoccarStrategy(Strategy):
                     go_backpost.drive.finished_dist = 800
                     return go_backpost
 
-        return DriveStrike(self.info, target, opponent_goal)
+        return JumpStrike(self.info, target, opponent_goal)
 
     def find_interrupt_move(self) -> Optional[Move]:
         if not self.info.car.on_ground and not isinstance(self.move, Recovery):

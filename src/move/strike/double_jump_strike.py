@@ -6,11 +6,11 @@ from utils.const import double_jump_height_to_time
 from utils.game_info import GameInfo
 from move.double_jump import DoubleJump
 from rlutilities.simulation import Ball
-from move.strike.drive_strike import DriveStrike
+from move.strike.jump_strike import JumpStrike
 from rlutilities.linear_algebra import vec3
 
 
-class DoubleJumpStrike(DriveStrike):
+class DoubleJumpStrike(JumpStrike):
     MIN_JUMP_HEIGHT: float = MAX_JUMP_HEIGHT_CONST
     MAX_JUMP_HEIGHT: float = MAX_DOUBLE_JUMP_HEIGHT_CONST + 60
     JUMP_HEIGHT_TO_TIME: Callable[[float], float] = double_jump_height_to_time
