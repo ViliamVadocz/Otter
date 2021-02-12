@@ -37,7 +37,13 @@ class AerialStrike(Strike):
         if time_left < 0.0:
             self.finished = True
 
-        sim_car, boost_estimate = self.simulate(Car(self.info.car))
+        sim_car, boost_estimate = self.simulate(
+            Car(self.info.car),
+            self.target_position,
+            self.target.time,
+            self.aerial_up,
+            render=True,
+        )
 
         if self.jump:
             self.jump.update()
@@ -80,11 +86,18 @@ class AerialStrike(Strike):
         self.jump.update()
         self.controls = self.jump.controls
 
-    def simulate(self, sim_car: Car) -> Tuple[Car, float]:
+    @staticmethod
+    def simulate(
+        sim_car: Car,
+        target_pos: vec3,
+        arrival_time: float,
+        up: vec3,
+        render: bool = False,
+    ) -> Tuple[Car, float]:
         test_aerial = RLUAerial(sim_car)
-        test_aerial.target_position = self.target_position
-        test_aerial.arrival_time = self.target.time
-        test_aerial.up = self.aerial_up
+        test_aerial.target_position = target_pos
+        test_aerial.arrival_time = arrival_time
+        test_aerial.up = up
 
         DT = 1 / 120
         ticks = 0
@@ -97,7 +110,7 @@ class AerialStrike(Strike):
             if test_aerial.controls.boost:
                 boost_used += DT * BOOST_USAGE
 
-            if ticks % 4 == 0:
+            if render and ticks % 4 == 0:
                 rendering.draw_rect_3d(sim_car.position, 5, 5, True, rendering.green())
             ticks += 1
 
@@ -105,6 +118,20 @@ class AerialStrike(Strike):
 
     @classmethod
     def valid_target(cls, car: Car, target: vec3, time: float) -> bool:
+        # Simulate aerial
+        if not car.on_ground:
+            collision_normal = Field.collide(
+                sphere(car.position, MIN_CAR_DIST_FROM_FIELD)
+            ).direction
+            if norm(collision_normal) > 0.0:
+                return False
+
+            sim_car, boost_used = cls.simulate(Car(car), target, time, vec3(0, 0, 1))
+            return (
+                boost_used < car.boost
+                and dist(sim_car.position, target) < MAX_DIST_ERROR
+            )
+
         if car.boost < MIN_BOOST:
             return False
         time_left = time - car.time
@@ -114,14 +141,6 @@ class AerialStrike(Strike):
         ).direction
         if norm(collision_normal) > 0.0:
             return False
-
-        # If I am already in the air, check I am far from field.
-        if not car.on_ground:
-            collision_normal = Field.collide(
-                sphere(car.position, MIN_CAR_DIST_FROM_FIELD)
-            ).direction
-            if norm(collision_normal) > 0.0:
-                return False
 
         # TODO Make this actually make sense
         return (
