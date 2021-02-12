@@ -1,3 +1,4 @@
+# flake8: noqa
 # fmt: off
 from typing import Optional
 
