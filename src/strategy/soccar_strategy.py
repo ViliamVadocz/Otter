@@ -27,8 +27,7 @@ AERIAL_TIME_HANDICAP = 0.2
 
 class SoccarStrategy(Strategy):
     def find_base_move(self) -> Move:
-        opponent_goal: vec3 = self.info.goals[not self.info.car.team].position
-        # TODO Kickoff.
+        # Kickoff.
         if self.info.state == GameState.Inactive:
             return DoKickoff(self.info)
 
@@ -61,22 +60,35 @@ class SoccarStrategy(Strategy):
             self.info.ball_prediction[-1],
         )
 
+        opponent_goal: vec3 = self.info.goals[not self.info.car.team].position
+
+        # Go for an aerial-strike.
         if aerial_target.time < double_jump_target.time - AERIAL_TIME_HANDICAP:
             return AerialStrike(self.info, aerial_target, opponent_goal)
+
+        # Recover from being in the air.
         if not self.info.car.on_ground:
             return Recovery(self.info)
+
+        # Go for a double-jump-strike.
         if double_jump_target.time < target.time - DOUBLE_JUMP_TIME_HANDICAP:
             return DoubleJumpStrike(self.info, double_jump_target, opponent_goal)
 
+        # Choose to grab boost or rotate to backpost.
         if target.time - self.info.time > STRIKE_PRIORITY_TIME:
+            # Find the closest active large-pad.
             pads: List[BoostPad] = [
                 pad
                 for pad in self.info.large_pads
                 if pad.state == BoostPadState.Available
             ]
+
+            # Define our goal's position.
             our_goal: vec3 = self.info.goals[self.info.car.team].position
             goal_width: float = self.info.goals[self.info.car.team].width
+
             if abs(target.position.x) > MIN_SAFE_BALL_X:
+                # Grab boost.
                 if self.info.car.boost < LOW_BOOST_AMOUNT and pads:
                     defensive_position: vec3 = (self.info.car.position + our_goal) / 2
                     pad: BoostPad = min(
@@ -84,6 +96,7 @@ class SoccarStrategy(Strategy):
                     )
                     return PickupBoost(self.info, pad)
                 elif dot(our_goal, self.info.car.position - target.position) < 0:
+                    # Rotate backpost.
                     backpost: vec3 = vec3(our_goal)
                     backpost += BACKPOST_GOAL_CAR_LERP_Y * (
                         self.info.car.position - backpost
@@ -96,6 +109,7 @@ class SoccarStrategy(Strategy):
                     go_backpost.drive.finished_dist = 800
                     return go_backpost
 
+        # Go for a jump-strike.
         return JumpStrike(self.info, target, opponent_goal)
 
     def find_interrupt_move(self) -> Optional[Move]:
