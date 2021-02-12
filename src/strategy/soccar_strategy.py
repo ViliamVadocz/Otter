@@ -7,6 +7,7 @@ from move.drive import Drive
 from utils.const import MAX_CAR_SPEED
 from move.recovery import Recovery
 from utils.vectors import dist
+from move.escape_wall import EscapeWall
 from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
 from rlutilities.simulation import Ball, BoostPad, GameState, BoostPadState
@@ -113,6 +114,10 @@ class SoccarStrategy(Strategy):
         return JumpStrike(self.info, target, opponent_goal)
 
     def find_interrupt_move(self) -> Optional[Move]:
-        if not self.info.car.on_ground and not isinstance(self.move, Recovery):
-            return Recovery(self.info)
+        if not self.info.car.on_ground:
+            if not isinstance(self.move, Recovery):
+                return Recovery(self.info)
+        elif EscapeWall.on_wall(self.info.car):
+            if not isinstance(self.move, EscapeWall):
+                return EscapeWall(self.info)
         return None

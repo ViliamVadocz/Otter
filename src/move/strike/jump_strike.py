@@ -59,14 +59,15 @@ class JumpStrike(Strike):
         # Calculations.
         car_to_target = self.target_position - self.info.car.position
         height: float = dot(car_to_target, self.info.car.up())
-        if not (
-            self.__class__.MIN_JUMP_HEIGHT < height < self.__class__.MAX_JUMP_HEIGHT
-        ):
-            self.finished = True
         car_to_target_flat = flatten_by_normal(car_to_target, self.info.car.up())
         distance: float = norm(car_to_target_flat)
         distance -= self.info.car.hitbox_widths.x + self.info.car.hitbox_offset.x
         self.drive.target_speed = distance / max(1e-10, time_left)
+
+        # If the target height is out of bounds, allow this move to be interrupted.
+        self.interruptible = not (
+            self.__class__.MIN_JUMP_HEIGHT < height < self.__class__.MAX_JUMP_HEIGHT
+        )
 
         # Going backwards.
         if (
