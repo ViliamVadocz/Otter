@@ -12,4 +12,5 @@ __pycache__/
 Otter.zip
 
 # Profiling
-profile_data/
+src/profile_data.dat
+src/profile_data.txt

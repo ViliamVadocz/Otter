@@ -10,8 +10,11 @@ if __name__ == "__main__":
         for folder, subfolders, file_names in os.walk("src"):
             for file_name in file_names:
                 # Ignore .pyc files (cached files)
-                _, ext = os.path.splitext(file_name)
+                file, ext = os.path.splitext(file_name)
                 if ext == ".pyc":
+                    continue
+                # Ignore profiling stuff.
+                if "profile_" in file:
                     continue
                 file_path = os.path.join(folder, file_name)
                 print(file_path)

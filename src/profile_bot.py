@@ -1,75 +1,58 @@
-import os
-import sys
-import time
+import io
 import cProfile
 from pstats import Stats, SortKey
-from shutil import rmtree
 from pathlib import Path
 
 from rlbot.agents.base_agent import SimpleControllerState
-from rlbot.agents.standalone.standalone_bot import StandaloneBot, run_bot
 
 from bot import Otter
 
-PROFILE_DATA_DIR = (Path(__file__).parent / "profile_data").absolute()
-COMBINED_FILE = PROFILE_DATA_DIR / "combined"
-MAX_FRAMES = 10_000
+current_dir = Path(__file__).parent.absolute()
+DATA_FILE = current_dir / "profile_data.dat"
+TEXT_FILE = current_dir / "profile_data.txt"
+MATCH_CONFIG = current_dir / "profile_match.cfg"
+
+MAX_FRAMES = 30_000
 
 
-class OtterProfileBot(Otter, StandaloneBot):
+class OtterProfiler(Otter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.frame = 0
+        self.__frame = 0
+        self.__pr = cProfile.Profile()
+        self.__saved_stats = False
+        print("Starting profiling")
 
-    def get_output(self, game_tick_packet):
-        if self.frame >= MAX_FRAMES:
-            print("Profiling done, interrupt this with Ctrl+C")
-            return SimpleControllerState()
-        pr = cProfile.Profile()
-        pr.enable()
-        output = super().get_output(game_tick_packet)
-        pr.disable()
-        pr.create_stats()
-        pr.dump_stats(PROFILE_DATA_DIR / str(self.frame))
-        self.frame += 1
-        return output
+    def get_output(self, game_tick_packet) -> SimpleControllerState:
+        output = None
+        if self.__frame < MAX_FRAMES:
+            self.__pr.enable()
+            output = super().get_output(game_tick_packet)
+            self.__pr.disable()
+
+        elif not self.__saved_stats:
+            print("Profiling done, saving data!")
+            io_string = io.StringIO()
+            ps = Stats(self.__pr, stream=io_string)
+            ps.sort_stats(SortKey.TIME)
+            ps.dump_stats(DATA_FILE)
+            ps.print_stats()
+            with open(TEXT_FILE, "w") as f:
+                f.write(io_string.getvalue())
+            self.__saved_stats = True
+            print("Done! You can end the match now.")
+
+        self.__frame += 1
+        return output if output is not None else super().get_output(game_tick_packet)
 
 
 if __name__ == "__main__":
 
-    if os.path.isfile(COMBINED_FILE):
-        ps = Stats()
-        ps.add(str(COMBINED_FILE))
-        ps.sort_stats(SortKey.TIME).print_stats()
-        exit()
+    from rlbot.setup_manager import SetupManager
 
-    if os.path.isdir(PROFILE_DATA_DIR):
-        rmtree(PROFILE_DATA_DIR)
-    os.mkdir(PROFILE_DATA_DIR)
-
-    config_path = (Path(__file__).parent / "bot.cfg").absolute()
-    sys.argv[1:] = [
-        f"--config-file={config_path}",
-        "--player-index=0",
-        "--team=0",
-        "--spawn-id=1",
-    ]
-    try:
-        run_bot(OtterProfileBot)
-    except Exception as err:
-        print(err)
-
-    time.sleep(2)
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    print("Combining frame profile data")
-    print("Please wait, it might take a minute")
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
-    ps = Stats()
-    for file in os.listdir(PROFILE_DATA_DIR):
-        path_to_file = PROFILE_DATA_DIR / file
-        if os.path.isfile(path_to_file):
-            ps.add(str(path_to_file))
-            os.remove(path_to_file)
-    ps.dump_stats(str(COMBINED_FILE))
-    ps.sort_stats(SortKey.TIME).print_stats()
+    manager = SetupManager()
+    manager.load_config(config_location=MATCH_CONFIG)
+    manager.connect_to_game()
+    manager.launch_early_start_bot_processes()
+    manager.start_match()
+    manager.launch_bot_processes()
