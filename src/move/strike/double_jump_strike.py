@@ -11,6 +11,7 @@ from rlutilities.linear_algebra import vec3
 
 
 class DoubleJumpStrike(JumpStrike):
+    OFFSET_DISTANCE: float = Ball.collision_radius
     MIN_JUMP_HEIGHT: float = MAX_JUMP_HEIGHT_CONST
     MAX_JUMP_HEIGHT: float = MAX_DOUBLE_JUMP_HEIGHT_CONST + 60
     JUMP_HEIGHT_TO_TIME: Callable[[float], float] = double_jump_height_to_time

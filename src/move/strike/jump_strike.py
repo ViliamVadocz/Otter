@@ -22,13 +22,13 @@ from rlutilities.linear_algebra import (
     angle_between,
 )
 
-OFFSET_DISTANCE: float = Ball.collision_radius + 35
 MAX_BACKWARDS_DIST = 1000
 MIN_BACKWARD_ANGLE = pi / 2 + 0.3
 MAX_DIST_ERROR = 30
 
 
 class JumpStrike(Strike):
+    OFFSET_DISTANCE: float = Ball.collision_radius + 35
     MIN_JUMP_HEIGHT: float = 0
     MAX_JUMP_HEIGHT: float = MAX_JUMP_HEIGHT_CONST + 60
     JUMP_HEIGHT_TO_TIME: Callable[[float], float] = jump_height_to_time
@@ -36,7 +36,7 @@ class JumpStrike(Strike):
     def __init__(self, info: GameInfo, target: Ball, goal: vec3):
         super().__init__(info, target)
         self.target_position: vec3 = vec3(self.target.position)
-        self.target_position += OFFSET_DISTANCE * vec3(
+        self.target_position += self.__class__.OFFSET_DISTANCE * vec3(
             get_offset_direction(info.car.position, target, xy(goal))
         )
         self.drive: Drive = Drive(info, self.target_position)
