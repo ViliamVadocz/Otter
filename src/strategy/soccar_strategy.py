@@ -7,7 +7,7 @@ from move.move import Move
 from move.drive import Drive
 from utils.const import MAX_CAR_SPEED
 from move.recovery import Recovery
-from utils.vectors import dist
+from utils.vectors import dist, alignment, direction
 from move.escape_wall import EscapeWall
 from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
@@ -15,7 +15,7 @@ from rlutilities.simulation import Ball, BoostPad, GameState, BoostPadState
 from move.kickoff.do_kickoff import DoKickoff
 from move.strike.jump_strike import JumpStrike
 from move.strike.aerial_strike import AerialStrike
-from rlutilities.linear_algebra import xy, dot, norm, vec3
+from rlutilities.linear_algebra import xy, dot, norm, vec3, normalize
 from move.strike.double_jump_strike import DoubleJumpStrike
 
 MIN_SAFE_BALL_X = 3000
@@ -25,6 +25,7 @@ BACKPOST_GOAL_CAR_LERP_Y = 0.125
 DOUBLE_JUMP_TIME_HANDICAP = 0.5
 STRIKE_PRIORITY_TIME = 0.6
 AERIAL_TIME_HANDICAP = 0.2
+MIN_AERIAL_ALIGNMENT = 0.3
 
 
 class SoccarStrategy(Strategy):
@@ -52,6 +53,8 @@ class SoccarStrategy(Strategy):
                 return PickupBoost(self.info, pad)
             return DoKickoff(self.info)
 
+        opponent_goal: vec3 = self.info.goals[not self.info.car.team].position
+
         target: Ball = next(
             (
                 ball
@@ -76,12 +79,17 @@ class SoccarStrategy(Strategy):
             (
                 ball
                 for ball in self.info.ball_prediction
-                if AerialStrike.valid_target(self.info.car, ball.position, ball.time)
+                if alignment(
+                    self.info.car.position,
+                    ball.position,
+                    opponent_goal,
+                    normalize(self.info.gravity),
+                )
+                > MIN_AERIAL_ALIGNMENT
+                and AerialStrike.valid_target(self.info.car, ball.position, ball.time)
             ),
             self.info.ball_prediction[-1],
         )
-
-        opponent_goal: vec3 = self.info.goals[not self.info.car.team].position
 
         # Go for an aerial-strike.
         if aerial_target.time < double_jump_target.time - AERIAL_TIME_HANDICAP:
