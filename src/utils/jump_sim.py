@@ -1,12 +1,9 @@
-from const import (
-    JUMP_ACC,
-    JUMP_IMPULSE,
-    MAX_JUMP_DURATION,
-    MAX_FIRST_JUMP_HOLD,
-    jump_height_to_time,
-)
+from utils.const import JUMP_ACC, JUMP_IMPULSE, MAX_JUMP_DURATION, MAX_FIRST_JUMP_HOLD
+from rlutilities.simulation import Car
+from rlutilities.linear_algebra import vec3
 
 
+# Outdated, might delete
 class Sim:
     def __init__(self, gravity=-650.0):
         self.g = gravity
@@ -39,27 +36,35 @@ class Sim:
             self.__init__(self.g)
 
 
-if __name__ == "__main__":
-    from math import sin
+def predict_jump(car: Car, grav: vec3, time: float) -> vec3:
+    up = car.up()
+    acc_time = min(time, MAX_FIRST_JUMP_HOLD)
+    pos = (
+        car.position
+        + (car.velocity + up * JUMP_IMPULSE) * acc_time
+        + 0.5 * (grav + up * JUMP_ACC) * acc_time * acc_time
+    )
+    if time < MAX_FIRST_JUMP_HOLD:
+        return pos
+    vel = (car.velocity + up * JUMP_IMPULSE) + (grav + up * JUMP_ACC) * acc_time
+    fall_time = time - acc_time
+    return pos + vel * fall_time + 0.5 * grav * fall_time * fall_time
 
-    import matplotlib.pyplot as plt
 
-    sim = Sim()
-    dt = 1 / 120
-    t = [i * dt for i in range(int(1 * (1 / dt)))]
-    p = []
-    for time in t:
-        p.append(sim.pos)
-        jump = True
-        # (
-        #     time < MAX_FIRST_JUMP_HOLD
-        #     or MAX_JUMP_DURATION > time > MAX_FIRST_JUMP_HOLD + 2 * dt
-        # )
-        sim.step(dt, jump)
-    # plt.plot(t, p)  # time - height
-    plt.plot(p, t)  # height - time
-    plt.plot(p, [jump_height_to_time(i) for i in p])
-    plt.show()
-
-    for pos, time in zip(p, t):
-        print(f"{pos}, {time}")
+def predict_double_jump(car: Car, grav: vec3, time: float) -> vec3:
+    up = car.up()
+    acc_time = min(time, MAX_FIRST_JUMP_HOLD)
+    pos = (
+        car.position
+        + (car.velocity + up * JUMP_IMPULSE) * acc_time
+        + 0.5 * (grav + up * JUMP_ACC) * acc_time * acc_time
+    )
+    if time < MAX_FIRST_JUMP_HOLD:
+        return pos
+    vel = (
+        (car.velocity + up * JUMP_IMPULSE)
+        + (grav + up * JUMP_ACC) * acc_time
+        + (up * JUMP_IMPULSE * 0.9)  # second jump
+    )
+    fall_time = time - acc_time
+    return pos + vel * fall_time + 0.5 * grav * fall_time * fall_time
