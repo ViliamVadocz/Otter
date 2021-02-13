@@ -24,6 +24,7 @@ DOUBLE_JUMP_TIME_HANDICAP = 0.5
 STRIKE_PRIORITY_TIME = 0.6
 AERIAL_TIME_HANDICAP = 0.2
 MIN_AERIAL_ALIGNMENT = 0.3
+WALL_STRIKE_TIME: float = 3
 
 
 class SoccarStrategy(Strategy):
@@ -61,6 +62,13 @@ class SoccarStrategy(Strategy):
             ),
             self.info.ball_prediction[-1],
         )
+
+        # Escape the wall.
+        if EscapeWall.on_wall(self.info.car):
+            # Strike the ball if possible.
+            if target.time - self.info.time < WALL_STRIKE_TIME:
+                return JumpStrike(self.info, target, opponent_goal)
+            return EscapeWall(self.info)
 
         double_jump_target: Ball = next(
             (
