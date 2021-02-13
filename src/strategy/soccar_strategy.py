@@ -28,8 +28,23 @@ AERIAL_TIME_HANDICAP = 0.2
 
 class SoccarStrategy(Strategy):
     def find_base_move(self) -> Move:
+        # Filter the large-pads for active ones.
+        pads: List[BoostPad] = [
+            pad for pad in self.info.large_pads if pad.state == BoostPadState.Available
+        ]
+
         # Kickoff.
         if self.info.state == GameState.Inactive:
+            closer: List[bool] = [
+                norm(car.position) + car.id
+                < norm(self.info.car.position) + self.info.index
+                for car in self.info.get_teammates()
+            ]
+            if any(closer):
+                pad: BoostPad = min(
+                    pads, key=lambda pad: dist(pad.position, self.info.car.position),
+                )
+                return PickupBoost(self.info, pad)
             return DoKickoff(self.info)
 
         target: Ball = next(
@@ -77,13 +92,6 @@ class SoccarStrategy(Strategy):
 
         # Choose to grab boost or rotate to backpost.
         if target.time - self.info.time > STRIKE_PRIORITY_TIME:
-            # Find the closest active large-pad.
-            pads: List[BoostPad] = [
-                pad
-                for pad in self.info.large_pads
-                if pad.state == BoostPadState.Available
-            ]
-
             # Define our goal's position.
             our_goal: vec3 = self.info.goals[self.info.car.team].position
             goal_width: float = self.info.goals[self.info.car.team].width

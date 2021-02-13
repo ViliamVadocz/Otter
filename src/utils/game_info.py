@@ -51,12 +51,16 @@ class GameInfo(Game):
         self.dt = self.time - self.prev_time
         self.prev_time = self.time
 
-    def get_teammates(self, carol: Car) -> List[Car]:
+    def get_teammates(self, carol: Car = None) -> List[Car]:
+        if not carol:
+            carol = self.car
         return [
             car for car in self.cars if car.team == carol.team and car.id != carol.id
         ]
 
-    def get_opponents(self, carol: Car) -> List[Car]:
+    def get_opponents(self, carol: Car = None) -> List[Car]:
+        if not carol:
+            carol = self.car
         return [car for car in self.cars if car.team != carol.team]
 
     @property
