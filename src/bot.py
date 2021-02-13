@@ -45,8 +45,9 @@ class Otter(BaseAgent):
         if len(self.info.ball_prediction) > MIN_PREDICTION:
             rendering.begin_rendering("ball prediction")
             rendering.draw_polyline_3d(
-                [ball.position for ball in self.info.ball_prediction][
-                    ::PREDICTION_STEP
+                [
+                    ball.position
+                    for ball in self.info.ball_prediction[::PREDICTION_STEP]
                 ],
                 rendering.cyan(),
             )
