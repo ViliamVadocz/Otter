@@ -4,7 +4,7 @@ from move.move import Move
 from utils.vectors import dist
 from utils.game_info import GameInfo
 from rlutilities.simulation import Car, Ball
-from rlutilities.linear_algebra import norm, vec3
+from rlutilities.linear_algebra import vec3
 
 BALL_CHANGED_DIST = 40
 

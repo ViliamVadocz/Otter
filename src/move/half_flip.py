@@ -2,7 +2,6 @@ from move.move import Move
 from utils.game_info import GameInfo
 from rlutilities.mechanics import ReorientML as Reorient
 from rlutilities.simulation import Input
-from rlutilities.linear_algebra import xy, look_at, normalize
 
 FIRST_JUMP = 0.05
 NO_JUMP = 0.05

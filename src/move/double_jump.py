@@ -2,8 +2,7 @@ from move.move import Move
 from utils.const import MAX_FIRST_JUMP_HOLD
 from utils.vectors import dist
 from utils.game_info import GameInfo
-from rlutilities.simulation import Input
-from rlutilities.linear_algebra import dot, vec3
+from rlutilities.linear_algebra import vec3
 
 FINISHED_DIST = 100
 TIMEOUT = 1.5

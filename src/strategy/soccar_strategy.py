@@ -4,10 +4,8 @@ from typing import List, Optional
 from move.goto import Goto
 from move.idle import Idle
 from move.move import Move
-from move.drive import Drive
-from utils.const import MAX_CAR_SPEED
 from move.recovery import Recovery
-from utils.vectors import dist, alignment, direction
+from utils.vectors import dist, alignment
 from move.escape_wall import EscapeWall
 from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
@@ -15,7 +13,7 @@ from rlutilities.simulation import Ball, BoostPad, GameState, BoostPadState
 from move.kickoff.do_kickoff import DoKickoff
 from move.strike.jump_strike import JumpStrike
 from move.strike.aerial_strike import AerialStrike
-from rlutilities.linear_algebra import xy, dot, norm, vec3, normalize
+from rlutilities.linear_algebra import dot, norm, vec3, normalize
 from move.strike.double_jump_strike import DoubleJumpStrike
 
 MIN_SAFE_BALL_X = 3000

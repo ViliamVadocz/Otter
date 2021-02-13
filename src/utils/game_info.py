@@ -1,13 +1,11 @@
 from typing import List, Optional
 
 from rlbot.agents.base_agent import BaseAgent
-from rlbot.utils.structures.game_data_struct import GameTickPacket, FieldInfoPacket
-from rlbot.utils.structures.ball_prediction_struct import Physics, BallPrediction
+from rlbot.utils.structures.game_data_struct import GameTickPacket
 
 from utils.match_settings import Map, GameMode, ParsedMatchSettings
-from utils.goal_prediction import GoalPrediction, get_goal_prediction
+from utils.goal_prediction import GoalPrediction
 from rlutilities.simulation import Car, Ball, Game, BoostPad, BoostPadType
-from rlutilities.linear_algebra import vec3
 
 BALL_PREDICT_DT = 1 / 120
 BALL_PREDICT_NUM = 720
