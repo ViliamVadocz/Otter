@@ -2,6 +2,7 @@ from math import copysign
 from typing import List, Optional
 
 from move.goto import Goto
+from move.idle import Idle
 from move.move import Move
 from move.drive import Drive
 from utils.const import MAX_CAR_SPEED
@@ -28,13 +29,17 @@ AERIAL_TIME_HANDICAP = 0.2
 
 class SoccarStrategy(Strategy):
     def find_base_move(self) -> Move:
+        # Idle.
+        if self.info.state == GameState.Inactive:
+            return Idle(self.info)
+
         # Filter the large-pads for active ones.
         pads: List[BoostPad] = [
             pad for pad in self.info.large_pads if pad.state == BoostPadState.Available
         ]
 
         # Kickoff.
-        if self.info.state == GameState.Inactive:
+        if self.info.state == GameState.Kickoff:
             closer: List[bool] = [
                 norm(car.position) + car.id
                 < norm(self.info.car.position) + self.info.index

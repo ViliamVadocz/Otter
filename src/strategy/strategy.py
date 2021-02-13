@@ -4,7 +4,7 @@ from typing import Optional
 from utils import rendering
 from move.move import Move
 from utils.game_info import GameInfo
-from rlutilities.simulation import Input
+from rlutilities.simulation import Input, GameState
 
 
 class Strategy(ABC):
@@ -12,6 +12,8 @@ class Strategy(ABC):
         self.info: GameInfo = info
         self.move: Optional[Move] = None
         self.controls: Input = Input()
+        self.last_demolished: bool = False
+        self.last_inactive: bool = False
 
     @abstractmethod
     def find_base_move(self) -> Move:
@@ -21,6 +23,14 @@ class Strategy(ABC):
         return None
 
     def update(self):
+        # Force end move if no longer demolished or newly inactive.
+        if not self.info.car.demolished and self.last_demolished:
+            self.move = None
+        self.last_demolished = self.info.car.demolished
+        if (self.info.state == GameState.Inactive) and not self.last_inactive:
+            self.move = None
+        self.last_inactive = self.info.state == GameState.Inactive
+
         # Choose move.
         if self.move and not self.move.finished:
             if self.move.interruptible:

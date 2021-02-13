@@ -20,12 +20,6 @@ class DoKickoff(Move):
         self.drive: Drive = Drive(info, vec3(0, 0, 0), 0)
 
     def update(self):
-        # Wait until kickoff.
-        if self.info.state == GameState.Inactive:
-            self.controls.throttle = 1
-            self.controls.steer = sin(self.info.time * 8)  # Wiggle.
-            return
-
         # Choose kickoff.
         if not self.kickoff:
             car_position = self.info.car.position
@@ -42,14 +36,13 @@ class DoKickoff(Move):
                 self.kickoff.timer = 0.9878482818603516 - 1 / 120
 
         # Execute kickoff.
-        if self.kickoff:
-            if self.kickoff.finished:
-                self.drive.update()
-                self.controls = self.drive.controls
-            else:
-                self.kickoff.step(self.info.dt)
-                self.controls = self.kickoff.controls
-                self.controls.roll *= self.dir
-                self.controls.yaw *= self.dir
-                self.controls.steer *= self.dir
-            self.finished = self.info.state == GameState.Active
+        if self.kickoff.finished:
+            self.drive.update()
+            self.controls = self.drive.controls
+        else:
+            self.kickoff.step(self.info.dt)
+            self.controls = self.kickoff.controls
+            self.controls.roll *= self.dir
+            self.controls.yaw *= self.dir
+            self.controls.steer *= self.dir
+        self.finished = self.info.state == GameState.Active
