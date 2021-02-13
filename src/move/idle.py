@@ -13,5 +13,5 @@ class Idle(Move):
     def update(self):
         # Wait until kickoff.
         self.finished = self.info.state != GameState.Inactive
-        self.controls.steer = sin(self.info.time * 8)  # Wiggle.
+        self.controls.steer = sin(self.info.time * 14)  # Wiggle.
         self.controls.throttle = self.info.car.on_ground
