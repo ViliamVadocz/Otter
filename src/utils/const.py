@@ -1,5 +1,3 @@
-from math import sqrt
-
 MAX_CAR_SPEED = 2300
 MAX_NO_BOOST_SPEED = 1410
 BOOST_ACC = 991.667

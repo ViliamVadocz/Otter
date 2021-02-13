@@ -12,7 +12,6 @@ from rlutilities.linear_algebra import (
     dot,
     mat3,
     norm,
-    vec2,
     vec3,
     cross,
     look_at,

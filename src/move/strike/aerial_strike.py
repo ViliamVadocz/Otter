@@ -3,13 +3,13 @@ from typing import Tuple, Optional
 from utils import rendering
 from move.drive import Drive
 from move.aerial import Aerial
-from utils.const import BOOST_ACC, BOOST_USAGE, MAX_CAR_SPEED, THROTTLE_ACC_IN_AIR
+from utils.const import BOOST_USAGE
 from utils.vectors import dist, direction, flatten_by_normal
 from utils.game_info import GameInfo
 from move.strike.strike import Strike
 from rlutilities.mechanics import Aerial as RLUAerial
 from rlutilities.simulation import Car, Ball, Field, sphere
-from rlutilities.linear_algebra import dot, norm, vec3, normalize, angle_between
+from rlutilities.linear_algebra import norm, vec3, angle_between
 
 OFFSET_DISTANCE = Ball.collision_radius + 20
 SPEED_REDUCTANT = 300
