@@ -14,7 +14,7 @@ from utils.const import (
     throttle_acc_from_speed,
 )
 from utils.game_info import GameInfo
-from rlutilities.linear_algebra import dot, sgn, norm, vec3
+from rlutilities.linear_algebra import dot, sgn, norm, vec3, normalize
 
 MAX_BOOST_ANGLE = 0.3
 HANDBRAKE_ANGLE = 1.5
@@ -52,11 +52,15 @@ class Drive(Move):
             max_speed: float = max(max_speed, get_speed_from_radius(radius))
         desired_speed: float = max(-max_speed, min(max_speed, self.target_speed))
 
-        # TODO A proper speed controller.
         speed = norm(car.velocity)
-        self.controls.throttle, boost = speed_controller(
-            speed, desired_speed, self.info.dt
-        )
+        throttle, boost = speed_controller(speed, desired_speed, self.info.dt)
+        # Prevent wall slipping.
+        if (
+            dot(self.info.car.up(), normalize(-1 * self.info.gravity)) < 0.7
+            and abs(throttle) < 0.05
+        ):
+            throttle = 0.05 * sgn(desired_speed - speed)
+        self.controls.throttle = throttle
         self.controls.boost = (
             boost and abs_angle < MAX_BOOST_ANGLE and speed < MAX_CAR_SPEED
         )
