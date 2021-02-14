@@ -40,8 +40,30 @@ class Aerial(StrikerExercise):
         return GameState(ball=ball, cars={0: car})
 
 
+class LongAerial(StrikerExercise):
+    def make_game_state(self, rng: SeededRandomNumberGenerator) -> GameState:
+        ball_pos = vec3(
+            rng.uniform(-1500, 1500), rng.uniform(-3000, -2000), rng.uniform(600, 1000)
+        )
+        ball_vel = vec3(-ball_pos.x / 2, 1000, (3000 - ball_pos.z) / 2)
+        ball = BallState(
+            physics=Physics(location=ball_pos.done(), velocity=ball_vel.done(),)
+        )
+
+        car = CarState(
+            physics=Physics(
+                location=Vector3(rng.uniform(-2000, 2000), -3000, 0),
+                rotation=Rotator(0, pi / 2, 0),
+                angular_velocity=Vector3(0, 0, 0),
+            ),
+            boost_amount=100,
+        )
+
+        return GameState(ball=ball, cars={0: car})
+
+
 def make_default_playlist() -> Playlist:
-    exercises = [Aerial("Aerial")]
+    exercises = [Aerial("Aerial"), LongAerial("LongAerial")]
     config = [
         PlayerConfig.bot_config(
             Path(__file__).absolute().parent.parent / "src" / "bot.cfg", Team.BLUE
