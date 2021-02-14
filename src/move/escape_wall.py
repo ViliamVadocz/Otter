@@ -30,7 +30,7 @@ class EscapeWall(Move):
         car: Car = self.info.car
         self.drive.target = self.get_target()
 
-        if dot(car.velocity, car.up()) < 200:
+        if dot(car.velocity, car.up()) < 100:
             if car.velocity.z > 700:
                 # Dodge away from wall.
                 direction: vec2 = vec2(car.left() * sgn(dot(car.left(), car.velocity)))

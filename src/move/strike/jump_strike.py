@@ -66,7 +66,9 @@ class JumpStrike(Strike):
 
         # If the target height is out of bounds, allow this move to be interrupted.
         self.interruptible = not (
-            self.__class__.MIN_JUMP_HEIGHT < height < self.__class__.MAX_JUMP_HEIGHT
+            self.__class__.MIN_JUMP_HEIGHT * 0.95
+            < height
+            < self.__class__.MAX_JUMP_HEIGHT / 0.95
         )
 
         # Going backwards.

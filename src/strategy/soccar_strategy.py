@@ -13,7 +13,7 @@ from rlutilities.simulation import Ball, BoostPad, GameState, BoostPadState
 from move.kickoff.do_kickoff import DoKickoff
 from move.strike.jump_strike import JumpStrike
 from move.strike.aerial_strike import AerialStrike
-from rlutilities.linear_algebra import dot, norm, vec3, normalize
+from rlutilities.linear_algebra import xy, dot, norm, vec3, normalize
 from move.strike.double_jump_strike import DoubleJumpStrike
 
 MIN_SAFE_BALL_X = 3000
@@ -105,16 +105,31 @@ class SoccarStrategy(Strategy):
         if not self.info.car.on_ground:
             return Recovery(self.info)
 
-        # Go for a double-jump-strike.
-        if double_jump_target.time < target.time - DOUBLE_JUMP_TIME_HANDICAP:
-            return DoubleJumpStrike(self.info, double_jump_target, opponent_goal)
+        # Define our goal's position.
+        our_goal: vec3 = self.info.goals[self.info.car.team].position
+        goal_width: float = self.info.goals[self.info.car.team].width
+
+        # Use the positioning of our teammates to determine whether to go for the ball.
+        teammate_behind: bool = False
+        if not self.info.get_teammates() or dist(target.position, our_goal) < 3000:
+            teammate_behind = True
+        else:
+            for car in self.info.get_teammates():
+                car_position: vec3 = car.position + car.velocity * (
+                    target.time - car.time
+                )
+                teammate_behind = (
+                    dot(
+                        car_position - self.info.car.position,
+                        self.info.car.position - target.position,
+                    )
+                    > 0
+                )
+                if teammate_behind:
+                    break
 
         # Choose to grab boost or rotate to backpost.
         if target.time - self.info.time > STRIKE_PRIORITY_TIME:
-            # Define our goal's position.
-            our_goal: vec3 = self.info.goals[self.info.car.team].position
-            goal_width: float = self.info.goals[self.info.car.team].width
-
             if abs(target.position.x) > MIN_SAFE_BALL_X:
                 # Grab boost.
                 if self.info.car.boost < LOW_BOOST_AMOUNT and pads:
@@ -133,9 +148,22 @@ class SoccarStrategy(Strategy):
                         goal_width / 2 - BACKPOST_OFFSET_X, -target.position.x
                     )
                     backpost.z = self.info.car.hitbox_widths.z
-                    go_backpost: Goto = Goto(self.info, backpost)
+                    go_backpost: Goto = Goto(self.info, xy(backpost))
                     go_backpost.drive.finished_dist = 800
                     return go_backpost
+
+        # Go defend if a teammate isn't backing up our strike.
+        if not teammate_behind:
+            defensive_position: vec3 = self.info.ball.position + (
+                our_goal - self.info.ball.position
+            ) * 0.8
+            go_defense: Goto = Goto(self.info, xy(defensive_position))
+            go_defense.drive.finished_dist = 2000
+            return go_defense
+
+        # Go for a double-jump-strike.
+        if double_jump_target.time < target.time - DOUBLE_JUMP_TIME_HANDICAP:
+            return DoubleJumpStrike(self.info, double_jump_target, opponent_goal)
 
         # Go for a jump-strike.
         return JumpStrike(self.info, target, opponent_goal)
