@@ -33,7 +33,7 @@ if __name__ == "__main__":
     # Tune variables.
     recorded: Tuple[List[float], List[float]] = (recorded_times, recorded_heights)
     variables: List[float] = [0.2, 291.667, 1458.333374]
-    tuner: Tuner = Tuner(recorded, predict_jump, variables, apply_factor=0.0001)
+    tuner: Tuner = Tuner(recorded, predict_jump, variables, apply_factor=0.00001)
     tuner.deltas[0] = 0  # Do not tune these variables.
     tuner.deltas[1] = 0
     tuner.tune()
