@@ -5,7 +5,7 @@ from utils.const import MAX_FIRST_JUMP_HOLD
 from utils.game_info import GameInfo
 from rlutilities.mechanics import Aerial as RLUAerial
 from rlutilities.simulation import Input
-from rlutilities.linear_algebra import vec3
+from rlutilities.linear_algebra import mat3, vec3
 
 FIRST_JUMP = MAX_FIRST_JUMP_HOLD
 BETWEEN_JUMPS = 0.02
@@ -13,13 +13,15 @@ SECOND_JUMP = 0.02
 
 
 class Aerial(Move):
-    def __init__(self, info: GameInfo, target: vec3, arrival_time: float, up: vec3):
+    def __init__(
+        self, info: GameInfo, target: vec3, arrival_time: float, orientation: mat3
+    ):
         super().__init__(info)
 
         self.aerial = RLUAerial(info.car)
         self.aerial.target_position = target
         self.aerial.arrival_time = arrival_time
-        self.aerial.up = up
+        self.aerial.target_orientation = orientation
 
         self.timer: float = inf
 
