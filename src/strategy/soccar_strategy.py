@@ -92,13 +92,17 @@ class SoccarStrategy(Strategy):
                     normalize(self.info.gravity),
                 )
                 > MIN_AERIAL_ALIGNMENT
-                and AerialStrike.valid_target(self.info.car, ball.position, ball.time)
+                and AerialStrike.valid_target(
+                    self.info.car, ball.position, ball.time, opponent_goal
+                )
             ),
             self.info.ball_prediction[-1],
         )
 
         # Go for an aerial-strike.
-        if aerial_target.time < double_jump_target.time - AERIAL_TIME_HANDICAP:
+        if aerial_target.time < double_jump_target.time - AERIAL_TIME_HANDICAP or (
+            not self.info.car.on_ground and aerial_target.time - self.info.time < 0.5
+        ):
             return AerialStrike(self.info, aerial_target, opponent_goal)
 
         # Recover from being in the air.
