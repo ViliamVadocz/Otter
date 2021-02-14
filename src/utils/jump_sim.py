@@ -9,39 +9,6 @@ from rlutilities.simulation import Car
 from rlutilities.linear_algebra import vec3
 
 
-# Outdated, might delete
-class Sim:
-    def __init__(self, gravity=-650.0):
-        self.g = gravity
-        self.pos = 0.0
-        self.vel = 0.0
-        self.jump_time = 0.0
-        self.jumps = 0
-
-    def step(self, dt, jump):
-        if self.jump_time > 0.0:
-            self.jump_time += dt
-
-        if jump:
-            if self.jumps == 0:
-                if self.jump_time == 0.0:
-                    self.vel += JUMP_IMPULSE
-                    self.jump_time += dt
-                elif self.jump_time < MAX_FIRST_JUMP_HOLD:
-                    self.vel += JUMP_ACC * dt
-            elif self.jumps == 1 and self.jump_time < MAX_JUMP_DURATION:
-                self.vel += JUMP_IMPULSE
-                self.jumps = 2
-        elif self.jumps == 0 and self.jump_time > 0.0:
-            self.jumps += 1
-
-        self.vel += self.g * dt
-        self.pos += self.vel * dt
-
-        if self.pos < 0.0:
-            self.__init__(self.g)
-
-
 def predict_jump(car: Car, grav: vec3, time: float) -> vec3:
     up = car.up()
     acc_time = min(time, MAX_FIRST_JUMP_HOLD)
