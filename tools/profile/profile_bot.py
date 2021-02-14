@@ -1,13 +1,16 @@
 import io
+import sys
 import cProfile
 from pstats import Stats, SortKey
 from pathlib import Path
 
 from rlbot.agents.base_agent import SimpleControllerState
 
+current_dir = Path(__file__).parent.absolute()
+sys.path.insert(1, current_dir.parent / "src")
+
 from bot import Otter
 
-current_dir = Path(__file__).parent.absolute()
 DATA_FILE = current_dir / "profile_data.dat"
 TEXT_FILE = current_dir / "profile_data.txt"
 MATCH_CONFIG = current_dir / "profile_match.cfg"

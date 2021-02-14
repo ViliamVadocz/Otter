@@ -13,9 +13,6 @@ if __name__ == "__main__":
                 file, ext = os.path.splitext(file_name)
                 if ext == ".pyc":
                     continue
-                # Ignore profiling stuff.
-                if "profile_" in file:
-                    continue
                 file_path = os.path.join(folder, file_name)
                 print(file_path)
                 zip_obj.write(file_path)
