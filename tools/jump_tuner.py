@@ -24,7 +24,7 @@ if __name__ == "__main__":
     # Crop recorded results.
     start_height: float = recorded_heights[0]
     for i, time in enumerate(recorded_times):
-        recorded_heights[i] = recorded_heights[i] - start_height
+        recorded_heights[i] -= start_height
         if recorded_heights[i] < 0:
             recorded_times = recorded_times[:i]
             recorded_heights = recorded_heights[:i]
