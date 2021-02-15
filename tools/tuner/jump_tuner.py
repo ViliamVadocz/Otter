@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from tuner import Tuner
 
-sys.path.insert(1, "../src")
+sys.path.insert(1, "../../src")
 
 from utils.const import JUMP_ACC, JUMP_IMPULSE, MAX_FIRST_JUMP_HOLD
 
