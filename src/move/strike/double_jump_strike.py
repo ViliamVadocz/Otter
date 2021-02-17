@@ -1,7 +1,5 @@
 from typing import Tuple, Callable
 
-from utils.const import MAX_JUMP_HEIGHT as MAX_JUMP_HEIGHT_CONST
-from utils.const import MAX_DOUBLE_JUMP_HEIGHT as MAX_DOUBLE_JUMP_HEIGHT_CONST
 from utils.game_info import GameInfo
 from move.double_jump import DoubleJump
 from utils.jump_prediction import solve_double_jump
@@ -12,12 +10,14 @@ from rlutilities.linear_algebra import vec3
 
 class DoubleJumpStrike(JumpStrike):
     OFFSET_DISTANCE: float = Ball.collision_radius
-    MIN_JUMP_HEIGHT: float = MAX_JUMP_HEIGHT_CONST
-    MAX_JUMP_HEIGHT: float = MAX_DOUBLE_JUMP_HEIGHT_CONST + 60
     SOLVE_JUMP: Callable[[Car, vec3, vec3], Tuple[vec3, float]] = solve_double_jump
 
     def __init__(self, info: GameInfo, target: Ball, goal: vec3):
         super().__init__(info, target, goal)
+
+    @staticmethod
+    def get_height_min_max(info: GameInfo) -> Tuple[float, float]:
+        return info.MAX_JUMP_HEIGHT, info.MAX_DOUBLE_JUMP_HEIGHT + 60
 
     def start_jump(self, time_left: float):
         self.jump = DoubleJump(self.info, self.target_position)

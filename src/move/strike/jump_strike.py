@@ -3,9 +3,14 @@ from typing import Any, Tuple, Union, Callable, Optional
 
 from utils import rendering
 from move.drive import Drive
-from utils.const import BOOST_ACC, BOOST_USAGE, MAX_CAR_SPEED
-from utils.const import MAX_JUMP_HEIGHT as MAX_JUMP_HEIGHT_CONST
-from utils.const import MAX_JUMP_DURATION, MAX_NO_BOOST_SPEED, MAX_FIRST_JUMP_HOLD
+from utils.const import (
+    BOOST_ACC,
+    BOOST_USAGE,
+    MAX_CAR_SPEED,
+    MAX_JUMP_DURATION,
+    MAX_NO_BOOST_SPEED,
+    MAX_FIRST_JUMP_HOLD,
+)
 from utils.aiming import get_offset_direction
 from utils.vectors import dist, direction, flatten_by_normal
 from utils.game_info import GameInfo
@@ -30,9 +35,6 @@ MAX_DIST_ERROR = 30
 
 class JumpStrike(Strike):
     OFFSET_DISTANCE: float = Ball.collision_radius + 35
-    # TODO find min and max jump height using solver
-    MIN_JUMP_HEIGHT: float = 0
-    MAX_JUMP_HEIGHT: float = MAX_JUMP_HEIGHT_CONST + 60
     SOLVE_JUMP: Callable[[Car, vec3, vec3], Tuple[vec3, float]] = solve_jump
 
     def __init__(self, info: GameInfo, target: Ball, goal: vec3):
@@ -43,6 +45,10 @@ class JumpStrike(Strike):
         )
         self.drive: Drive = Drive(info, self.target_position)
         self.jump: Optional[Union[Dodge, Any]] = None
+
+    @staticmethod
+    def get_height_min_max(info: GameInfo) -> Tuple[float, float]:
+        return 0, info.MAX_JUMP_HEIGHT + 60
 
     def update(self):
         car = self.info.car
@@ -68,11 +74,8 @@ class JumpStrike(Strike):
         self.drive.target_speed = distance / max(1e-10, time_left)
 
         # If the target height is out of bounds, allow this move to be interrupted.
-        self.interruptible = not (
-            self.__class__.MIN_JUMP_HEIGHT * 0.95
-            < height
-            < self.__class__.MAX_JUMP_HEIGHT / 0.95
-        )
+        min_height, max_height = self.get_height_min_max(self.info)
+        self.interruptible = not (min_height * 0.95 < height < max_height / 0.95)
 
         # Going backwards.
         if (
@@ -133,9 +136,10 @@ class JumpStrike(Strike):
         self.controls = self.jump.controls
 
     @classmethod
-    def valid_target(cls, car: Car, target: vec3, time: float) -> bool:
+    def valid_target(cls, info: GameInfo, car: Car, target: vec3, time: float) -> bool:
         height: float = dot(target - car.position, car.up())
-        if not (cls.MIN_JUMP_HEIGHT < height < cls.MAX_JUMP_HEIGHT):
+        min_height, max_height = cls.get_height_min_max(info)
+        if not (min_height < height < max_height):
             return False
         t: float = max(1e-10, time - car.time)
         u: float = dot(

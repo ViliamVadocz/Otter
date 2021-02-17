@@ -1,11 +1,12 @@
-from math import inf
+from math import inf, isnan
 from typing import Any, Tuple, Optional, Collection
 
 import numpy as np
 
 from utils.const import JUMP_ACC, JUMP_IMPULSE, DOUBLE_JUMP_IMPULSE, MAX_FIRST_JUMP_HOLD
+from utils.vectors import up_at
 from rlutilities.simulation import Car
-from rlutilities.linear_algebra import dot, vec3
+from rlutilities.linear_algebra import dot, norm, vec3, normalize
 
 
 def predict_jump(car: Car, grav: vec3, time: float) -> vec3:
@@ -102,3 +103,27 @@ def solve_double_jump(car: Car, grav: vec3, target: vec3) -> Tuple[vec3, float]:
     else:
         best_time += MAX_FIRST_JUMP_HOLD
     return predict_double_jump(car, grav, best_time) - target, best_time
+
+
+def get_max_jump_height(grav: vec3) -> float:
+    up = normalize(-1 * grav)
+    target = up * 10000
+    car = Car()
+    car.orientation = up_at(up, vec3(1, 0, 0))
+    offset, _ = solve_jump(car, grav, target)
+    max_height = norm(offset + target)
+    if isnan(max_height):
+        return 10000
+    return max_height
+
+
+def get_max_double_jump_height(grav: vec3) -> float:
+    up = normalize(-1 * grav)
+    target = up * 10000
+    car = Car()
+    car.orientation = up_at(up, vec3(1, 0, 0))
+    offset, _ = solve_double_jump(car, grav, target)
+    max_height = norm(offset + target)
+    if isnan(max_height):
+        return 10000
+    return max_height
