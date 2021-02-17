@@ -79,10 +79,11 @@ def solve_jump(car: Car, grav: vec3, target: vec3) -> Tuple[vec3, float]:
     ) * MAX_FIRST_JUMP_HOLD
     acc = grav
     roots = get_roots(pos, vel, acc, target)
-    best_time = (
-        smallest_real_root_in_range(roots, -MAX_FIRST_JUMP_HOLD, inf)
-        + MAX_FIRST_JUMP_HOLD
-    )
+    best_time = smallest_real_root_in_range(roots, -MAX_FIRST_JUMP_HOLD, inf)
+    if best_time is None:
+        best_time = inf
+    else:
+        best_time += MAX_FIRST_JUMP_HOLD
     return predict_jump(car, grav, best_time) - target, best_time
 
 
@@ -95,8 +96,9 @@ def solve_double_jump(car: Car, grav: vec3, target: vec3) -> Tuple[vec3, float]:
     ) * MAX_FIRST_JUMP_HOLD
     acc = grav
     roots = get_roots(pos, vel, acc, target)
-    best_time = (
-        smallest_real_root_in_range(roots, -MAX_FIRST_JUMP_HOLD, inf)
-        + MAX_FIRST_JUMP_HOLD
-    )
+    best_time = smallest_real_root_in_range(roots, -MAX_FIRST_JUMP_HOLD, inf)
+    if best_time is None:
+        best_time = inf
+    else:
+        best_time += MAX_FIRST_JUMP_HOLD
     return predict_double_jump(car, grav, best_time) - target, best_time
