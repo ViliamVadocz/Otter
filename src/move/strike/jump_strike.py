@@ -1,4 +1,4 @@
-from math import pi
+from math import pi, atan2
 from typing import Any, Union, Callable, Optional
 
 from utils import rendering
@@ -12,6 +12,7 @@ from utils.game_info import GameInfo
 from move.strike.strike import Strike
 from rlutilities.mechanics import Dodge
 from rlutilities.simulation import Car, Ball
+from utils.drive_estimation import get_time_to_reach_distance
 from rlutilities.linear_algebra import (
     xy,
     dot,
@@ -123,15 +124,14 @@ class JumpStrike(Strike):
 
     @classmethod
     def valid_target(cls, car: Car, target: vec3, time: float) -> bool:
-        height: float = dot(target - car.position, car.up())
-        if not (cls.MIN_JUMP_HEIGHT < height < cls.MAX_JUMP_HEIGHT):
+        local: vec3 = dot(car.orientation, target - car.position)
+        if not (cls.MIN_JUMP_HEIGHT < local.z < cls.MAX_JUMP_HEIGHT):
             return False
-        t: float = max(1e-10, time - car.time)
-        u: float = dot(
-            car.velocity, direction(car.position, target),
-        )
-        s: float = dist(target, car.position) - abs(height)
-        return (2 * s) / t - u < 0.95 * max(
-            MAX_NO_BOOST_SPEED,
-            min(MAX_CAR_SPEED, abs(u) + car.boost / BOOST_USAGE * BOOST_ACC),
+        speed: float = dot(car.velocity, direction(car.position, target))
+        distance: float = norm(xy(local))
+        angle: float = atan2(local.y, local.x)
+        return (
+            get_time_to_reach_distance(distance, max(0, speed), car.boost)
+            + abs(angle) * 0.2
+            < time - car.time
         )
