@@ -83,7 +83,7 @@ class GameInfo(Game):
         return [car for car in self.cars if car.team != carol.team]
 
     @property
-    def car(self):
+    def car(self) -> Car:
         return self.cars[self.index]
 
     def setup_mode(self):
