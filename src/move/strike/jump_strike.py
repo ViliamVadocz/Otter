@@ -49,6 +49,10 @@ class JumpStrike(Strike):
     def get_height_min_max(info: GameInfo) -> Tuple[float, float]:
         return 0, info.MAX_JUMP_HEIGHT + 60
 
+    @staticmethod
+    def get_max_time_to_jump(info: GameInfo) -> float:
+        return min(info.JUMP_PEAK_TIME, MAX_JUMP_DURATION + MAX_FIRST_JUMP_HOLD)
+
     def update(self):
         car = self.info.car
         time_left: float = self.target.time - self.info.time
@@ -92,14 +96,10 @@ class JumpStrike(Strike):
                 if (
                     time_to_target > MAX_FIRST_JUMP_HOLD
                     and time_left < time_to_target + 1 / 30
+                    and time_to_target < self.get_max_time_to_jump(self.info)
                 ):
-                    if isinstance(self, JumpStrike):
-                        if time_to_target < MAX_JUMP_DURATION:
-                            self.start_jump(time_left)
-                            return
-                    else:
-                        self.start_jump(time_left)
-                        return
+                    self.start_jump(time_left)
+                    return
         else:
             self.finished = True
 

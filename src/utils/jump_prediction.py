@@ -105,25 +105,25 @@ def solve_double_jump(car: Car, grav: vec3, target: vec3) -> Tuple[vec3, float]:
     return predict_double_jump(car, grav, best_time) - target, best_time
 
 
-def get_max_jump_height(grav: vec3) -> float:
+def get_jump_peak(grav: vec3) -> float:
     up = normalize(-1 * grav)
     target = up * 10000
     car = Car()
     car.orientation = up_at(up, vec3(1, 0, 0))
-    offset, _ = solve_jump(car, grav, target)
+    offset, time_to_reach = solve_jump(car, grav, target)
     max_height = norm(offset + target)
     if isnan(max_height):
         return 10000
-    return max_height
+    return max_height, time_to_reach
 
 
-def get_max_double_jump_height(grav: vec3) -> float:
+def get_double_jump_peak(grav: vec3) -> float:
     up = normalize(-1 * grav)
     target = up * 10000
     car = Car()
     car.orientation = up_at(up, vec3(1, 0, 0))
-    offset, _ = solve_double_jump(car, grav, target)
+    offset, time_to_reach = solve_double_jump(car, grav, target)
     max_height = norm(offset + target)
     if isnan(max_height):
         return 10000
-    return max_height
+    return max_height, time_to_reach

@@ -3,10 +3,15 @@ from typing import List, Optional
 from rlbot.agents.base_agent import BaseAgent
 from rlbot.utils.structures.game_data_struct import GameTickPacket
 
-from utils.const import DEFAULT_MAX_JUMP_HEIGHT, DEFAULT_MAX_DOUBLE_JUMP_HEIGHT
+from utils.const import (
+    DEFAULT_JUMP_PEAK_TIME,
+    DEFAULT_MAX_JUMP_HEIGHT,
+    DEFAULT_DOUBLE_JUMP_PEAK_TIME,
+    DEFAULT_MAX_DOUBLE_JUMP_HEIGHT,
+)
 from utils.match_settings import Map, GameMode, ParsedMatchSettings
 from utils.goal_prediction import GoalPrediction
-from utils.jump_prediction import get_max_jump_height, get_max_double_jump_height
+from utils.jump_prediction import get_jump_peak, get_double_jump_peak
 from rlutilities.simulation import Car, Ball, Game, BoostPad, BoostPadType
 from rlutilities.linear_algebra import norm, vec3
 
@@ -25,7 +30,9 @@ class GameInfo(Game):
         self.prev_time: float = 0.0
         self.prev_gravity: vec3 = vec3(self.gravity)
         self.MAX_JUMP_HEIGHT: float = DEFAULT_MAX_JUMP_HEIGHT
+        self.JUMP_PEAK_TIME: float = DEFAULT_JUMP_PEAK_TIME
         self.MAX_DOUBLE_JUMP_HEIGHT: float = DEFAULT_MAX_DOUBLE_JUMP_HEIGHT
+        self.DOUBLE_JUMP_PEAK_TIME: float = DEFAULT_DOUBLE_JUMP_PEAK_TIME
         self.goal_prediction: Optional[GoalPrediction] = None
         self.settings: ParsedMatchSettings = ParsedMatchSettings(
             agent.get_match_settings()
@@ -57,10 +64,11 @@ class GameInfo(Game):
 
         if norm(self.gravity - self.prev_gravity) > 0.1:
             self.prev_gravity = vec3(self.gravity)
-            self.MAX_JUMP_HEIGHT: float = get_max_jump_height(self.gravity)
-            self.MAX_DOUBLE_JUMP_HEIGHT: float = get_max_double_jump_height(
-                self.gravity
-            )
+            self.MAX_JUMP_HEIGHT, self.JUMP_PEAK_TIME = get_jump_peak(self.gravity)
+            (
+                self.MAX_DOUBLE_JUMP_HEIGHT,
+                self.DOUBLE_JUMP_PEAK_TIME,
+            ) = get_double_jump_peak(self.gravity)
 
     def get_teammates(self, carol: Car = None) -> List[Car]:
         if not carol:
