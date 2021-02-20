@@ -22,10 +22,9 @@ from rlutilities.linear_algebra import (
 SIM_POINTS_NUM = 200
 SIM_DT = 1.0 / 30.0
 SIM_SPHERE_R = 40
-LOOK_DOWN_TIME = 1.1
-MAX_BOOST_ANGLE = 0.1
-MIN_BOOST = 0
-MIN_LANDING_DIST = 300
+BOOST_DOWN_TIME: float = 0.3
+LOOK_DOWN_TIME: float = 0.6
+MAX_BOOST_ANGLE: float = 0.4
 
 
 class Recovery(Move):
@@ -37,34 +36,22 @@ class Recovery(Move):
         car = self.info.car
         landing, orientation, normal, time = self.simulate()
 
-        boost = False
-        if (
-            car.boost > MIN_BOOST
-            and time > LOOK_DOWN_TIME
-            and dist(landing, car.position) > MIN_LANDING_DIST
-        ):
-            if normal is not None:
-                # Boost in opposite direction to normal
-                # such that up is velocity flatted by normal.
-                up = normalize(flatten_by_normal(car.velocity, normal))
-                orientation = look_at(-1 * normal, up)
-            else:
-                # Just boost down if we don't have a collision normal.
-                flat_vel = car.velocity
-                flat_vel[2] = 0
-                orientation = look_at(vec3(0, 0, -1), normalize(flat_vel))
-
-            boost = (
-                norm(car.velocity) < 2300
-                and angle_between(car.orientation, orientation) < MAX_BOOST_ANGLE
-            )
+        # Look down and boost.
+        if car.boost and time > LOOK_DOWN_TIME:
+            # Boost in opposite direction to normal
+            # such that up is velocity flatted by normal.
+            up = normalize(flatten_by_normal(car.velocity, normal))
+            orientation = look_at(-1 * normal, up)
+        self.controls.boost = (
+            time > BOOST_DOWN_TIME
+            and angle_between(car.orientation, orientation) < MAX_BOOST_ANGLE
+        )
 
         self.reorient.target_orientation = orientation
         self.reorient.step(self.info.dt)
         self.controls.pitch = self.reorient.controls.pitch
         self.controls.yaw = self.reorient.controls.yaw
         self.controls.roll = self.reorient.controls.roll
-        self.controls.boost = boost
         self.controls.throttle = 1.0  # Prevent turtling.
 
         # Jump when touching ceiling.
