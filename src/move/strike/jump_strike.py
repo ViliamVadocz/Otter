@@ -29,8 +29,7 @@ from rlutilities.linear_algebra import (
 )
 
 MAX_BACKWARDS_DIST = 1000
-MIN_BACKWARD_ANGLE = pi / 2 + 0.3
-MAX_DIST_ERROR = 30
+MAX_DIST_ERROR = 40
 
 
 class JumpStrike(Strike):
@@ -76,14 +75,6 @@ class JumpStrike(Strike):
         # If the target height is out of bounds, allow this move to be interrupted.
         min_height, max_height = self.get_height_min_max(self.info)
         self.interruptible = not (min_height * 0.95 < height < max_height / 0.95)
-
-        # Going backwards.
-        if (
-            self.drive.target_speed < MAX_NO_BOOST_SPEED
-            and distance < MAX_BACKWARDS_DIST
-            and angle_between(car.forward(), car_to_target_flat) > MIN_BACKWARD_ANGLE
-        ):
-            self.drive.target_speed *= -1.0
 
         self.drive.update()
         self.controls = self.drive.controls
