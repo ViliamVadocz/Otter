@@ -86,14 +86,13 @@ class JumpStrike(Strike):
 
         # Jump execution.
         if self.info.car.on_ground:
-            current_velocity: float = dot(
-                normalize(car_to_target_flat), self.info.car.velocity,
+            direction: float = dot(
+                normalize(car_to_target_flat), normalize(self.info.car.velocity),
             )
-            if abs(current_velocity * time_left - distance) < MAX_DIST_ERROR:
-                time_to_height: float = self.__class__.JUMP_HEIGHT_TO_TIME(height)
-                if time_to_height > 0.2 and time_left < time_to_height + 1 / 30:
-                    self.start_jump(time_left)
-                    return
+            time_to_height: float = self.__class__.JUMP_HEIGHT_TO_TIME(height)
+            if direction > 0.8 and time_to_height > time_left - 1 / 60:
+                self.start_jump(time_left)
+                return
         else:
             self.finished = True
 
@@ -127,11 +126,15 @@ class JumpStrike(Strike):
         local: vec3 = dot(car.orientation, target - car.position)
         if not (cls.MIN_JUMP_HEIGHT < local.z < cls.MAX_JUMP_HEIGHT):
             return False
-        speed: float = dot(car.velocity, direction(car.position, target))
-        distance: float = norm(xy(local))
+
+        T: float = cls.JUMP_HEIGHT_TO_TIME(local.z)
+        s: float = norm(xy(local))
+        u: float = dot(car.velocity, direction(car.position, target))
+        t: float = (time - car.time - T)
+        a: float = (2 * (s - u * (t + T))) / (t * (t + 2 * T))
+
+        t2: float = get_time_to_reach_distance(s, max(0, u), car.boost)
+        a2: float = (2 * (s - t2 * max(0, u))) / (t2 ** 2)
+
         angle: float = atan2(local.y, local.x)
-        return (
-            get_time_to_reach_distance(distance, max(0, speed), car.boost)
-            + abs(angle) * 0.2
-            < time - car.time
-        )
+        return (a2 * (0.9 - abs(angle) * 0.1)) > a and t2 < t + T
