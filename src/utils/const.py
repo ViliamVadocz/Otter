@@ -14,8 +14,10 @@ DOUBLE_JUMP_IMPULSE: float = JUMP_IMPULSE * 0.9162810719288189
 JUMP_ACC: float = 1346.6605414091864
 DODGE_IMPULSE: float = 500
 
-MAX_JUMP_HEIGHT: float = 220  # TODO Support variable gravity.
-MAX_DOUBLE_JUMP_HEIGHT: float = 440  # TODO Support variable gravity.
+DEFAULT_MAX_JUMP_HEIGHT: float = 220
+DEFAULT_JUMP_PEAK_TIME: float = 1.0
+DEFAULT_MAX_DOUBLE_JUMP_HEIGHT: float = 440
+DEFAULT_DOUBLE_JUMP_PEAK_TIME: float = 1.28
 
 
 def throttle_acc_from_speed(speed):
@@ -28,28 +30,6 @@ def throttle_acc_from_speed(speed):
         return -16 * speed + 22560
     else:
         return 0
-
-
-# TODO Replace estimates with precise calculations.
-def double_jump_height_to_time(x):
-    # Hold for MAX_FIRST_JUMP_HOLD and then jump again right after.
-    x = max(0, min(MAX_DOUBLE_JUMP_HEIGHT, x))
-    a = 1.872348977e-8
-    b = -1.126747937e-5
-    c = 3.560647225e-3
-    d = -7.446058499e-3
-    return a * x ** 3 + b * x ** 2 + c * x + d
-
-
-def jump_height_to_time(x):
-    # Single jump estimation.
-    x = max(0, min(MAX_JUMP_HEIGHT, x))
-    a = 9.4343801054e-10
-    b = -3.0870839992e-7
-    c = 3.1466727477e-5
-    d = 1.5970047137e-3
-    e = 1.5706693469e-2
-    return a * x ** 4 + b * x ** 3 + c * x ** 2 + d * x + e
 
 
 def get_speed_from_radius(radius: float) -> float:

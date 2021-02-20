@@ -55,10 +55,8 @@ class Drive(Move):
         speed = norm(car.velocity)
         throttle, boost = speed_controller(speed, desired_speed, self.info.dt)
         # Prevent wall slipping.
-        if (
-            dot(self.info.car.up(), normalize(-1 * self.info.gravity)) < 0.7
-            and abs(throttle) < 0.05
-        ):
+        on_wall = dot(self.info.car.up(), normalize(-1 * self.info.gravity)) < 0.7
+        if on_wall and abs(throttle) < 0.05:
             throttle = 0.05 * sgn(desired_speed - speed)
         self.controls.throttle = throttle
         self.controls.boost = (
@@ -67,7 +65,7 @@ class Drive(Move):
 
         # Steering.
         self.controls.steer = 2 / (1 + exp(-5.0 * angle)) - 1
-        self.controls.handbrake = abs_angle > HANDBRAKE_ANGLE and car.up().z > 0.8
+        self.controls.handbrake = abs_angle > HANDBRAKE_ANGLE and not on_wall
         if self.controls.handbrake:
             if dot(car.velocity, car.forward()) * self.target_speed < 0:
                 self.controls.handbrake = False

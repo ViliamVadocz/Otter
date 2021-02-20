@@ -58,7 +58,9 @@ class SoccarStrategy(Strategy):
             (
                 ball
                 for ball in self.info.ball_prediction
-                if JumpStrike.valid_target(self.info.car, ball.position, ball.time)
+                if JumpStrike.valid_target(
+                    self.info, self.info.car, ball.position, ball.time
+                )
             ),
             self.info.ball_prediction[-1],
         )
@@ -75,7 +77,7 @@ class SoccarStrategy(Strategy):
                 ball
                 for ball in self.info.ball_prediction
                 if DoubleJumpStrike.valid_target(
-                    self.info.car, ball.position, ball.time
+                    self.info, self.info.car, ball.position, ball.time
                 )
             ),
             self.info.ball_prediction[-1],
@@ -93,7 +95,7 @@ class SoccarStrategy(Strategy):
                 )
                 > MIN_AERIAL_ALIGNMENT
                 and AerialStrike.valid_target(
-                    self.info.car, ball.position, ball.time, opponent_goal
+                    self.info, self.info.car, ball.position, ball.time, opponent_goal
                 )
             ),
             self.info.ball_prediction[-1],
