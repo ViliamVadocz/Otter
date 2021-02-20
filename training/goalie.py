@@ -34,6 +34,7 @@ class RollingBall(GoalieExercise):
         car = CarState(
             physics=Physics(
                 location=Vector3(rng.uniform(-2000, 2000), -4000, 0),
+                velocity=Vector3(0, 0, 0),
                 rotation=Rotator(0, pi / 2, 0),
                 angular_velocity=Vector3(0, 0, 0),
             ),
@@ -60,9 +61,11 @@ class BouncingBall(GoalieExercise):
         car = CarState(
             physics=Physics(
                 location=Vector3(rng.uniform(-2000, 2000), -3000, 0),
+                velocity=Vector3(0, 0, 0),
                 rotation=Rotator(0, pi / 2, 0),
                 angular_velocity=Vector3(0, 0, 0),
-            )
+            ),
+            boost_amount=40,
         )
 
         return GameState(ball=ball, cars={0: car})
