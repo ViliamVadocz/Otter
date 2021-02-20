@@ -3,7 +3,14 @@ from typing import Tuple, Optional
 from utils import rendering
 from move.drive import Drive
 from move.aerial import Aerial
-from utils.const import JUMP_ACC, BOOST_ACC, BOOST_USAGE, JUMP_IMPULSE
+from utils.const import (
+    JUMP_ACC,
+    BOOST_ACC,
+    BOOST_USAGE,
+    JUMP_IMPULSE,
+    DOUBLE_JUMP_IMPULSE,
+    MAX_FIRST_JUMP_HOLD,
+)
 from utils.vectors import dist, up_at, direction, flatten_by_normal
 from utils.game_info import GameInfo
 from move.strike.strike import Strike
@@ -41,22 +48,6 @@ class AerialStrike(Strike):
             self.finished = True
 
         sim_car = Car(self.info.car)
-        # Account for jump
-        if not self.jump:
-            jump_duration = 0.21
-            sim_car.position = predict_double_jump(
-                sim_car, self.info.gravity, jump_duration
-            )
-            sim_car.velocity += (
-                sim_car.up() * JUMP_IMPULSE
-                + (
-                    sim_car.up() * JUMP_ACC
-                    + sim_car.forward() * BOOST_ACC
-                    + self.info.gravity
-                )
-                * jump_duration
-            )
-            sim_car.time += jump_duration
         sim_car, boost_estimate = self.simulate(
             sim_car,
             self.target_position,
@@ -118,6 +109,7 @@ class AerialStrike(Strike):
         test_aerial.target_position = target_pos
         test_aerial.arrival_time = arrival_time
         test_aerial.target_orientation = orientation
+        test_aerial.double_jump = True
 
         DT = 1 / 120
         ticks = 0
@@ -154,8 +146,11 @@ class AerialStrike(Strike):
 
             # Simulate aerial
             sim_car, boost_used = cls.simulate(
-                Car(car), target, time, up_at(direction(target, goal), vec3(0, 0, 1))
-            )  # TODO Use gravity for direction
+                Car(car),
+                target,
+                time,
+                up_at(direction(target, goal), -1 * info.gravity),
+            )
             return (
                 boost_used < car.boost
                 and dist(sim_car.position, target) < MAX_DIST_ERROR
@@ -173,9 +168,7 @@ class AerialStrike(Strike):
         # TODO Make this actually make sense
         car_to_target = target - car.position
         ground_time = norm(flatten_by_normal(car_to_target, car.up())) / 2000
-        air_time = (
-            dot(car_to_target, vec3(0, 0, 1)) / 1200
-        )  # TODO Use gravity for direction
+        air_time = dot(car_to_target, normalize(-1 * info.gravity)) / 1200
         return (
             angle_between(car.forward(), direction(car.position, target)) < 0.7
             and ground_time + air_time < time_left
