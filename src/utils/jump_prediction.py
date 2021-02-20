@@ -1,4 +1,4 @@
-from math import inf, isnan
+from math import inf, sqrt, isnan
 from typing import Any, Tuple, Optional, Collection
 
 import numpy as np
@@ -127,3 +127,47 @@ def get_double_jump_peak(grav: vec3) -> float:
     if isnan(max_height):
         return 10000
     return max_height, time_to_reach
+
+
+def solve_quadratic(a: float, b: float, c: float) -> Optional[Tuple[float, float]]:
+    m = b ** 2 - 4 * a * c
+    if m < 0:
+        return None
+    m = sqrt(m)
+    t1 = (-b + m) / (2 * a)
+    t2 = (-b - m) / (2 * a)
+    return t1, t2
+
+
+def time_to_reach_jump_height(height: float, grav: float) -> float:
+    pos = (
+        JUMP_IMPULSE * MAX_FIRST_JUMP_HOLD
+        + 0.5 * (grav + JUMP_ACC) * MAX_FIRST_JUMP_HOLD * MAX_FIRST_JUMP_HOLD
+    )
+    vel = JUMP_IMPULSE + (grav + JUMP_ACC) * MAX_FIRST_JUMP_HOLD
+    solutions = solve_quadratic(grav / 2, vel, pos - height)
+    if solutions:
+        return min(
+            max(solutions[0] + MAX_FIRST_JUMP_HOLD, 1e-10),
+            max(solutions[1] + MAX_FIRST_JUMP_HOLD, 1e-10),
+        )
+    else:
+        # Cannot reach this height
+        return inf
+
+
+def time_to_reach_double_jump_height(height: float, grav: float) -> float:
+    pos = (
+        JUMP_IMPULSE * MAX_FIRST_JUMP_HOLD
+        + 0.5 * (grav + JUMP_ACC) * MAX_FIRST_JUMP_HOLD * MAX_FIRST_JUMP_HOLD
+    )
+    vel = JUMP_IMPULSE + DOUBLE_JUMP_IMPULSE + (grav + JUMP_ACC) * MAX_FIRST_JUMP_HOLD
+    solutions = solve_quadratic(grav / 2, vel, pos - height)
+    if solutions:
+        return min(
+            max(solutions[0] + MAX_FIRST_JUMP_HOLD, 1e-10),
+            max(solutions[1] + MAX_FIRST_JUMP_HOLD, 1e-10),
+        )
+    else:
+        # Cannot reach this height
+        return inf

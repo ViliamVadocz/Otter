@@ -16,7 +16,7 @@ from utils.vectors import dist, direction, flatten_by_normal
 from utils.game_info import GameInfo
 from move.strike.strike import Strike
 from rlutilities.mechanics import Dodge
-from utils.jump_prediction import solve_jump
+from utils.jump_prediction import solve_jump, time_to_reach_jump_height
 from rlutilities.simulation import Car, Ball
 from utils.drive_estimation import get_time_to_reach_distance
 from rlutilities.linear_algebra import (
@@ -36,6 +36,7 @@ MAX_DIST_ERROR = 50
 class JumpStrike(Strike):
     OFFSET_DISTANCE: float = Ball.collision_radius + 35
     SOLVE_JUMP: Callable[[Car, vec3, vec3], Tuple[vec3, float]] = solve_jump
+    JUMP_HEIGHT_TO_TIME: Callable[[float, float], float] = time_to_reach_jump_height
 
     def __init__(self, info: GameInfo, target: Ball, goal: vec3):
         super().__init__(info, target)
@@ -134,9 +135,7 @@ class JumpStrike(Strike):
         if not (min_height < local.z < max_height):
             return False
 
-        _, T = cls.SOLVE_JUMP(
-            Car(), vec3(0, 0, -1) * norm(info.gravity), vec3(0, 0, local.z)
-        )
+        T = cls.JUMP_HEIGHT_TO_TIME(local.z, dot(car.up(), info.gravity))
         s: float = norm(xy(local))
         u: float = dot(car.velocity, direction(car.position, target))
         t: float = (time - car.time - T)
