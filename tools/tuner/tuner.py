@@ -35,6 +35,7 @@ class Tuner:
 
     def tune(self):
         iter: int = 1
+        last_random_deltas: List[float] = [0] * len(self.variables)
         while True:
             random_deltas: List[float] = [
                 random_sign() * self.deltas[i] for i in range(len(self.variables))
@@ -62,9 +63,19 @@ class Tuner:
                     self.variables[i] + self.apply_factor * random_deltas[i]
                     for i in range(len(self.variables))
                 ]
-            self.deltas = [delta * (1 - self.apply_factor) for delta in self.deltas]
+            self.deltas = [
+                self.deltas[i]
+                * (
+                    (1 - self.apply_factor)
+                    if (random_deltas[i] * last_random_deltas[i] < 0)
+                    else 1
+                )
+                for i in range(len(self.deltas))
+            ]
+            last_random_deltas = random_deltas
+            if all([delta * self.apply_factor < 10 ** -13 for delta in self.deltas]):
+                print(str(iter) + ": " + str(self.variables))
+                break
             if iter % 10000 == 0:
                 print(str(iter) + ": " + str(self.variables))
             iter += 1
-            if all([delta * self.apply_factor < 10 ** -13 for delta in self.deltas]):
-                break

@@ -1,4 +1,4 @@
-from math import pi
+from math import pi, atan2
 from typing import Any, Tuple, Union, Callable, Optional
 
 from utils import rendering
@@ -18,6 +18,7 @@ from move.strike.strike import Strike
 from rlutilities.mechanics import Dodge
 from utils.jump_prediction import solve_jump
 from rlutilities.simulation import Car, Ball
+from utils.drive_estimation import get_time_to_reach_distance
 from rlutilities.linear_algebra import (
     xy,
     dot,
@@ -85,13 +86,13 @@ class JumpStrike(Strike):
 
         # Jump execution.
         if car.on_ground:
+            # TODO Use offset to adjust when jumping from walls.
             offset, time_to_target = self.__class__.SOLVE_JUMP(
                 car, self.info.gravity, self.target_position
             )
             final_pos = self.target_position + offset
             rendering.draw_line_3d(car.position, final_pos, rendering.green())
             rendering.draw_rect_3d(final_pos, 10, 10, True, rendering.green())
-            # TODO Use offset to adjust when jumping from walls.
             if norm(offset) < MAX_DIST_ERROR:
                 if (
                     time_to_target > MAX_FIRST_JUMP_HOLD
@@ -128,16 +129,21 @@ class JumpStrike(Strike):
 
     @classmethod
     def valid_target(cls, info: GameInfo, car: Car, target: vec3, time: float) -> bool:
-        height: float = dot(target - car.position, car.up())
+        local: vec3 = dot(car.orientation, target - car.position)
         min_height, max_height = cls.get_height_min_max(info)
-        if not (min_height < height < max_height):
+        if not (min_height < local.z < max_height):
             return False
-        t: float = max(1e-10, time - car.time)
-        u: float = dot(
-            car.velocity, direction(car.position, target),
+
+        _, T = cls.SOLVE_JUMP(
+            Car(), vec3(0, 0, -1) * norm(info.gravity), vec3(0, 0, local.z)
         )
-        s: float = dist(target, car.position) - abs(height)
-        return (2 * s) / t - u < 0.95 * max(
-            MAX_NO_BOOST_SPEED,
-            min(MAX_CAR_SPEED, abs(u) + car.boost / BOOST_USAGE * BOOST_ACC),
-        )
+        s: float = norm(xy(local))
+        u: float = dot(car.velocity, direction(car.position, target))
+        t: float = (time - car.time - T)
+        a: float = (2 * (s - u * (t + T))) / (t * (t + 2 * T))
+
+        t2: float = get_time_to_reach_distance(s, max(0, u), car.boost)
+        a2: float = (2 * (s - t2 * max(0, u))) / (t2 ** 2)
+
+        angle: float = atan2(local.y, local.x)
+        return (a2 * (0.9 - abs(angle) * 0.1)) > a and t2 < t + T
