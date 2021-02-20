@@ -29,7 +29,7 @@ from rlutilities.linear_algebra import (
 )
 
 MAX_BACKWARDS_DIST = 1000
-MAX_DIST_ERROR = 40
+MAX_DIST_ERROR = 50
 
 
 class JumpStrike(Strike):
@@ -88,9 +88,9 @@ class JumpStrike(Strike):
             offset, time_to_target = self.__class__.SOLVE_JUMP(
                 car, self.info.gravity, self.target_position
             )
-            rendering.draw_rect_3d(
-                self.target_position + offset, 10, 10, True, rendering.green()
-            )
+            final_pos = self.target_position + offset
+            rendering.draw_line_3d(car.position, final_pos, rendering.green())
+            rendering.draw_rect_3d(final_pos, 10, 10, True, rendering.green())
             # TODO Use offset to adjust when jumping from walls.
             if norm(offset) < MAX_DIST_ERROR:
                 if (
