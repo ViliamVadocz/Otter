@@ -6,7 +6,7 @@ from utils.game_info import GameInfo
 from rlutilities.simulation import Car, Ball
 from rlutilities.linear_algebra import vec3
 
-BALL_CHANGED_DIST = 40
+BALL_CHANGED_DIST = 80
 
 
 class Strike(Move):

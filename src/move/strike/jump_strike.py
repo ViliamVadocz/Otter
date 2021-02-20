@@ -36,7 +36,9 @@ MAX_DIST_ERROR = 50
 class JumpStrike(Strike):
     OFFSET_DISTANCE: float = Ball.collision_radius + 35
     SOLVE_JUMP: Callable[[Car, vec3, vec3], Tuple[vec3, float]] = solve_jump
-    JUMP_HEIGHT_TO_TIME: Callable[[float, float], float] = time_to_reach_jump_height
+    JUMP_HEIGHT_TO_TIME: Callable[
+        [float, float, float], float
+    ] = time_to_reach_jump_height
 
     def __init__(self, info: GameInfo, target: Ball, goal: vec3):
         super().__init__(info, target)
@@ -61,6 +63,9 @@ class JumpStrike(Strike):
 
         super().update()
         if self.jump:
+            rendering.draw_line_3d(
+                car.position, self.target_position, rendering.yellow(),
+            )
             if hasattr(self.jump, "step"):
                 self.jump.step(self.info.dt)
             else:
@@ -86,22 +91,16 @@ class JumpStrike(Strike):
         self.controls = self.drive.controls
 
         # Jump execution.
-        if car.on_ground:
-            # TODO Use offset to adjust when jumping from walls.
-            offset, time_to_target = self.__class__.SOLVE_JUMP(
-                car, self.info.gravity, self.target_position
+        if self.info.car.on_ground:
+            direction: float = dot(
+                normalize(car_to_target_flat), normalize(self.info.car.velocity),
             )
-            final_pos = self.target_position + offset
-            rendering.draw_line_3d(car.position, final_pos, rendering.green())
-            rendering.draw_rect_3d(final_pos, 10, 10, True, rendering.green())
-            if norm(offset) < MAX_DIST_ERROR:
-                if (
-                    time_to_target > MAX_FIRST_JUMP_HOLD
-                    and time_left < time_to_target + 1 / 30
-                    and time_to_target < self.get_max_time_to_jump(self.info)
-                ):
-                    self.start_jump(time_left)
-                    return
+            time_to_height: float = self.__class__.JUMP_HEIGHT_TO_TIME(
+                height, dot(car.up(), self.info.gravity)
+            )
+            if direction > 0.9 and time_to_height > time_left - 1 / 60:
+                self.start_jump(time_left)
+                return
         else:
             self.finished = True
 
@@ -145,4 +144,4 @@ class JumpStrike(Strike):
         a2: float = (2 * (s - t2 * max(0, u))) / (t2 ** 2)
 
         angle: float = atan2(local.y, local.x)
-        return (a2 * (0.9 - abs(angle) * 0.1)) > a and t2 < t + T
+        return (a2 * (0.75 - abs(angle) * 0.3)) > a and t2 < t + T
