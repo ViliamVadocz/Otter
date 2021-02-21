@@ -27,21 +27,20 @@ class ActionType(Enum):
 
 
 class TMCPMessage:
-    @classmethod
-    def ball_action(cls, team: int, index: int, time: float = -1.0) -> "TMCPMessage":
-        self = cls()
+    def __init__(self, team: int, index: int, action_type: ActionType):
         self.team = team
         self.index = index
-        self.action_type = ActionType.BALL
+        self.action_type = action_type
+
+    @classmethod
+    def ball_action(cls, team: int, index: int, time: float = -1.0) -> "TMCPMessage":
+        self = cls(team, index, ActionType.BALL)
         self.time = time
         return self
 
     @classmethod
     def boost_action(cls, team: int, index: int, target: int) -> "TMCPMessage":
-        self = cls()
-        self.team = team
-        self.index = index
-        self.action_type = ActionType.BOOST
+        self = cls(team, index, ActionType.BOOST)
         self.target = target
         return self
 
@@ -49,20 +48,14 @@ class TMCPMessage:
     def demo_action(
         cls, team: int, index: int, target: int, time: float = -1.0
     ) -> "TMCPMessage":
-        self = cls()
-        self.team = team
-        self.index = index
-        self.action_type = ActionType.DEMO
+        self = cls(team, index, ActionType.DEMO)
         self.target = target
         self.time = time
         return self
 
     @classmethod
     def wait_action(cls, team: int, index: int) -> "TMCPMessage":
-        self = cls()
-        self.team = team
-        self.index = index
-        self.action_type = ActionType.WAIT
+        self = cls(team, index, ActionType.WAIT)
         return self
 
     @classmethod
@@ -71,8 +64,8 @@ class TMCPMessage:
             team: int = message["team"]
             index: int = message["index"]
 
-            action = message["action"]
-            action_type = ActionType(action["type"])
+            action: dict = message["action"]
+            action_type: ActionType = ActionType(action["type"])
 
             if action_type == ActionType.BALL:
                 msg = cls.ball_action(team, index, action["time"])
