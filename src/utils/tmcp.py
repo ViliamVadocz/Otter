@@ -149,13 +149,15 @@ class TMCPHandler:
         self.team: int = agent.team
         self.last_time: float = 0.0
 
-    def send(self, message: TMCPMessage):
-        """Sends a TMCPMessage over match comms. Will not send messages if they are coming too quickly."""
+    def send(self, message: TMCPMessage) -> bool:
+        """Send a TMCPMessage over match comms. Will not send messages if they are coming too quickly.
+        Returns whether a message was sent."""
         current_time = perf_counter()
         if current_time - self.last_time < TIME_BETWEEN_MESSAGES:
-            return
+            return False
         self.matchcomms.outgoing_broadcast.put_nowait(message.to_dict())
         self.last_time: float = current_time
+        return True
 
     def recv(self) -> List[TMCPMessage]:
         messages = []
@@ -179,7 +181,7 @@ class TMCPHandler:
 
         return TMCPMessage.from_dict(message)
 
-    def send_ball_action(self, time: float = None):
+    def send_ball_action(self, time: Optional[float] = None) -> bool:
         """The bot is going for the ball.
 
         `time` - Game time that your bot will arrive at the ball.
@@ -188,16 +190,16 @@ class TMCPHandler:
             msg = TMCPMessage.ball_action(self.team, self.index)
         else:
             msg = TMCPMessage.ball_action(self.team, self.index, time)
-        self.send(msg)
+        return self.send(msg)
 
-    def send_boost_action(self, target: int):
+    def send_boost_action(self, target: int) -> bool:
         """The bot is going for boost.
 
         `target` - Index of the boost pad the bot is going to collect.
         """
-        self.send(TMCPMessage.boost_action(self.team, self.index, target))
+        return self.send(TMCPMessage.boost_action(self.team, self.index, target))
 
-    def send_demo_action(self, target: int, time: float = None):
+    def send_demo_action(self, target: int, time: Optional[float] = None) -> bool:
         """The bot is going to demolish another car.
 
         `target` - Index of the bot that will be demoed.
@@ -207,10 +209,10 @@ class TMCPHandler:
             msg = TMCPMessage.demo_action(self.team, self.index, target)
         else:
             msg = TMCPMessage.demo_action(self.team, self.index, target, time)
-        self.send(msg)
+        return self.send(msg)
 
-    def send_wait_action(self):
+    def send_wait_action(self) -> bool:
         """The bot is waiting for a chance to go for the ball or boost.
         Some examples are positioning (retreating/shadowing) and recovering.
         """
-        self.send(TMCPMessage.wait_action(self.team, self.index))
+        return self.send(TMCPMessage.wait_action(self.team, self.index))
