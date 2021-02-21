@@ -15,7 +15,7 @@ from rlbot.agents.base_agent import BaseAgent
 from rlbot.matchcomms.client import MatchcommsClient
 
 MAX_PACKETS_PER_TICK: int = 50
-TIME_BETWEEN_MESSAGES: int = 0.1
+TIME_BETWEEN_MESSAGES: float = 0.1
 TMCP_VERSION = [0, 5]
 
 
