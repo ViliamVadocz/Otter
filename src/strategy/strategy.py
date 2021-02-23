@@ -3,6 +3,7 @@ from typing import Optional
 
 from utils import rendering
 from move.move import Move
+from utils.tmcp import TMCPHandler, TMCPMessage
 from utils.const import MAX_CAR_SPEED
 from utils.vectors import dist
 from utils.game_info import GameInfo
@@ -11,8 +12,9 @@ from rlutilities.linear_algebra import vec3
 
 
 class Strategy(ABC):
-    def __init__(self, info: GameInfo):
+    def __init__(self, info: GameInfo, tmcp_handler: TMCPHandler):
         self.info: GameInfo = info
+        self.tmcp_handler: TMCPHandler = tmcp_handler
         self.move: Optional[Move] = None
         self.controls: Input = Input()
         self.last_demolished: bool = False
@@ -25,6 +27,10 @@ class Strategy(ABC):
 
     def find_interrupt_move(self) -> Optional[Move]:
         return None
+
+    @abstractmethod
+    def handle_tmcp_message(self, message: TMCPMessage):
+        pass
 
     def update(self):
         # Force end move...
@@ -43,6 +49,11 @@ class Strategy(ABC):
         ):
             self.move = None
         self.last_position = vec3(self.info.car.position)
+
+        # Handle TMCP messages.
+        new_messages = self.tmcp_handler.recv()
+        for message in new_messages:
+            self.handle_tmcp_message(message)
 
         # Choose move.
         if self.move and not self.move.finished:

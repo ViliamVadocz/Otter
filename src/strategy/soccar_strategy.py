@@ -1,15 +1,22 @@
 from math import copysign
-from typing import List, Optional
+from typing import List, Mapping, Optional
 
 from move.goto import Goto
 from move.idle import Idle
 from move.move import Move
+from utils.tmcp import ActionType, TMCPMessage
 from move.recovery import Recovery
 from utils.vectors import dist, alignment
 from move.escape_wall import EscapeWall
 from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
-from rlutilities.simulation import Ball, BoostPad, GameState, BoostPadState
+from rlutilities.simulation import (
+    Ball,
+    BoostPad,
+    GameState,
+    BoostPadType,
+    BoostPadState,
+)
 from move.kickoff.do_kickoff import DoKickoff
 from move.strike.jump_strike import JumpStrike
 from move.strike.aerial_strike import AerialStrike
@@ -28,14 +35,22 @@ WALL_STRIKE_TIME: float = 3
 
 
 class SoccarStrategy(Strategy):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.reserved_pads: Mapping[int, int] = dict()
+
     def find_base_move(self) -> Move:
         # Idle.
         if self.info.state == GameState.Inactive:
             return Idle(self.info)
 
-        # Filter the large-pads for active ones.
+        # Filter the large-pads for non-reserved active ones.
         pads: List[BoostPad] = [
-            pad for pad in self.info.large_pads if pad.state == BoostPadState.Available
+            pad
+            for pad_index, pad in enumerate(self.info.pads)
+            if pad.type == BoostPadType.Full
+            and pad.state == BoostPadState.Available
+            and pad_index not in self.reserved_pads.values()
         ]
 
         # Kickoff.
@@ -49,7 +64,10 @@ class SoccarStrategy(Strategy):
                 pad: BoostPad = min(
                     pads, key=lambda pad: dist(pad.position, self.info.car.position),
                 )
+                # Reserve boost pad.
+                self.tmcp_handler.send_boost_action(self.info.pads.index(pad))
                 return PickupBoost(self.info, pad)
+            self.tmcp_handler.send_ball_action()  # TODO Get some Kickoff time estimate
             return DoKickoff(self.info)
 
         opponent_goal: vec3 = self.info.goals[not self.info.car.team].position
@@ -69,6 +87,7 @@ class SoccarStrategy(Strategy):
         if EscapeWall.on_wall(self.info.car):
             # Strike the ball if possible.
             if target.time - self.info.time < WALL_STRIKE_TIME:
+                self.tmcp_handler.send_ball_action(target.time)
                 return JumpStrike(self.info, target, opponent_goal)
             return EscapeWall(self.info)
 
@@ -105,6 +124,7 @@ class SoccarStrategy(Strategy):
         if aerial_target.time < double_jump_target.time - AERIAL_TIME_HANDICAP or (
             not self.info.car.on_ground and aerial_target.time - self.info.time < 0.5
         ):
+            self.tmcp_handler.send_ball_action(aerial_target.time)
             return AerialStrike(self.info, aerial_target, opponent_goal)
 
         # Recover from being in the air.
@@ -143,6 +163,8 @@ class SoccarStrategy(Strategy):
                     pad: BoostPad = min(
                         pads, key=lambda pad: dist(pad.position, defensive_position),
                     )
+                    # Reserve boost pad.
+                    self.tmcp_handler.send_boost_action(self.info.pads.index(pad))
                     return PickupBoost(self.info, pad)
                 elif dot(our_goal, self.info.car.position - target.position) < 0:
                     # Rotate backpost.
@@ -156,6 +178,7 @@ class SoccarStrategy(Strategy):
                     backpost.z = self.info.car.hitbox_widths.z
                     go_backpost: Goto = Goto(self.info, xy(backpost))
                     go_backpost.drive.finished_dist = 800
+                    self.tmcp_handler.send_wait_action()
                     return go_backpost
 
         # Go defend if a teammate isn't backing up our strike.
@@ -165,13 +188,16 @@ class SoccarStrategy(Strategy):
             ) * 0.8
             go_defense: Goto = Goto(self.info, xy(defensive_position))
             go_defense.drive.finished_dist = 2000
+            self.tmcp_handler.send_wait_action()
             return go_defense
 
         # Go for a double-jump-strike.
         if double_jump_target.time < target.time - DOUBLE_JUMP_TIME_HANDICAP:
+            self.tmcp_handler.send_ball_action(double_jump_target.time)
             return DoubleJumpStrike(self.info, double_jump_target, opponent_goal)
 
         # Go for a jump-strike.
+        self.tmcp_handler.send_ball_action(target.time)
         return JumpStrike(self.info, target, opponent_goal)
 
     def find_interrupt_move(self) -> Optional[Move]:
@@ -182,3 +208,25 @@ class SoccarStrategy(Strategy):
             if not isinstance(self.move, EscapeWall):
                 return EscapeWall(self.info)
         return None
+
+    def handle_tmcp_message(self, message: TMCPMessage):
+        # Remove pad reservation if we get a new message from that bot.
+        if self.reserved_pads.get(message.index):
+            self.reserved_pads[message.index] = None
+        # Also remove pad reservations if the bot gets close.
+        for bot_index, pad_index in self.reserved_pads.items():
+            if pad_index is None:
+                continue
+            if dist(self.info.cars[bot_index], self.info.pads[pad_index]) < 200:
+                self.reserved_pads[bot_index] = None
+
+        # Handle different types of messages.
+        if message.action_type == ActionType.BALL:
+            pass
+        elif message.action_type == ActionType.BOOST:
+            pad_index = message.target
+            self.reserved_pads[message.index] = pad_index
+        elif message.action_type == ActionType.DEMO:
+            pass
+        elif message.action_type == ActionType.WAIT:
+            pass

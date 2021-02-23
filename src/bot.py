@@ -2,6 +2,7 @@ from rlbot.agents.base_agent import BaseAgent
 from rlbot.utils.structures.game_data_struct import GameTickPacket
 
 from utils import rendering
+from utils.tmcp import TMCPHandler
 from utils.game_info import GameInfo
 from strategy.strategy import Strategy
 from utils.match_settings import GameMode
@@ -16,6 +17,7 @@ class Otter(BaseAgent):
 
     def initialize_agent(self):
         self.info: GameInfo = GameInfo(self)
+        self.tmcp_handler = TMCPHandler(self)
         self.strategy: Strategy = self.pick_strategy()
         rendering.bind_renderer(self.renderer)
 
@@ -36,8 +38,8 @@ class Otter(BaseAgent):
 
     def pick_strategy(self) -> Strategy:
         if self.info.settings.game_mode == GameMode.Soccer:
-            return SoccarStrategy(self.info)
-        return DefaultStrategy(self.info)
+            return SoccarStrategy(self.info, self.tmcp_handler)
+        return DefaultStrategy(self.info, self.tmcp_handler)
 
     def render(self):
         MIN_PREDICTION = 100
