@@ -3,8 +3,11 @@ from typing import Optional
 
 from utils import rendering
 from move.move import Move
+from utils.const import MAX_CAR_SPEED
+from utils.vectors import dist
 from utils.game_info import GameInfo
 from rlutilities.simulation import Input, GameState
+from rlutilities.linear_algebra import vec3
 
 
 class Strategy(ABC):
@@ -14,6 +17,7 @@ class Strategy(ABC):
         self.controls: Input = Input()
         self.last_demolished: bool = False
         self.last_inactive: bool = False
+        self.last_position: vec3 = vec3(0, 0, 0)
 
     @abstractmethod
     def find_base_move(self) -> Move:
@@ -23,13 +27,22 @@ class Strategy(ABC):
         return None
 
     def update(self):
-        # Force end move if no longer demolished or newly inactive.
+        # Force end move...
+        # ... if no longer demolished.
         if not self.info.car.demolished and self.last_demolished:
             self.move = None
         self.last_demolished = self.info.car.demolished
+        # ... if newly inactive.
         if (self.info.state == GameState.Inactive) and not self.last_inactive:
             self.move = None
         self.last_inactive = self.info.state == GameState.Inactive
+        # ... if teleported.
+        if (
+            dist(self.info.car.position, self.last_position)
+            > (MAX_CAR_SPEED + 200) * self.info.dt
+        ):
+            self.move = None
+        self.last_position = vec3(self.info.car.position)
 
         # Choose move.
         if self.move and not self.move.finished:
