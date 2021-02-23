@@ -1,8 +1,8 @@
+from tmcp import TMCPHandler
 from rlbot.agents.base_agent import BaseAgent
 from rlbot.utils.structures.game_data_struct import GameTickPacket
 
 from utils import rendering
-from utils.tmcp import TMCPHandler
 from utils.game_info import GameInfo
 from strategy.strategy import Strategy
 from utils.match_settings import GameMode

@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
+from tmcp import TMCPHandler, TMCPMessage
+
 from utils import rendering
 from move.move import Move
-from utils.tmcp import TMCPHandler, TMCPMessage
 from utils.const import MAX_CAR_SPEED
 from utils.vectors import dist
 from utils.game_info import GameInfo

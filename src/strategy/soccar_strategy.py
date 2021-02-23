@@ -1,10 +1,11 @@
 from math import copysign
 from typing import List, Mapping, Optional
 
+from tmcp import ActionType, TMCPMessage
+
 from move.goto import Goto
 from move.idle import Idle
 from move.move import Move
-from utils.tmcp import ActionType, TMCPMessage
 from move.recovery import Recovery
 from utils.vectors import dist, alignment
 from move.escape_wall import EscapeWall
