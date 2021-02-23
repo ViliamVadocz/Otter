@@ -179,7 +179,7 @@ class SoccarStrategy(Strategy):
                     backpost.z = self.info.car.hitbox_widths.z
                     go_backpost: Goto = Goto(self.info, xy(backpost))
                     go_backpost.drive.finished_dist = 800
-                    self.tmcp_handler.send_wait_action()
+                    self.tmcp_handler.send_wait_action(-1.0)
                     return go_backpost
 
         # Go defend if a teammate isn't backing up our strike.
@@ -189,7 +189,7 @@ class SoccarStrategy(Strategy):
             ) * 0.8
             go_defense: Goto = Goto(self.info, xy(defensive_position))
             go_defense.drive.finished_dist = 2000
-            self.tmcp_handler.send_wait_action()
+            self.tmcp_handler.send_wait_action(target.time)
             return go_defense
 
         # Go for a double-jump-strike.
