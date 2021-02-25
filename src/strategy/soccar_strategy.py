@@ -21,6 +21,7 @@ from rlutilities.simulation import (
 from move.kickoff.do_kickoff import DoKickoff
 from move.strike.jump_strike import JumpStrike
 from move.strike.aerial_strike import AerialStrike
+from move.strike.ground_strike import GroundStrike
 from rlutilities.linear_algebra import xy, dot, norm, vec3, normalize
 from move.strike.double_jump_strike import DoubleJumpStrike
 
