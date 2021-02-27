@@ -239,6 +239,21 @@ class SoccarStrategy(Strategy):
             pad_index = message.target
             self.reserved_pads[message.index] = pad_index
 
+            # Another bot is trying to reserve a pad we are already going for.
+            if (
+                isinstance(self.move, PickupBoost)
+                and self.move.pad == self.info.pads[pad_index]
+            ):
+                pad_pos = self.info.pads[pad_index].position
+                # Repeat the message if we are closer.
+                if dist(self.info.car.position, pad_pos) < dist(
+                    self.info.cars[message.index].position, pad_pos
+                ):
+                    self.tmcp_handler.send_boost_action(pad_index)
+                # Go do something else if they're closer.
+                else:
+                    self.move = None
+
         # TODO Redo this?
         if (
             isinstance(self.move, Strike)
