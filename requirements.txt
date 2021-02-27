@@ -1,8 +1,7 @@
+-r src/bot_requirements.txt
 black
 flake8
 isort
-numpy
 pre-commit
 rlbot
 rlbottraining
-tmcp
