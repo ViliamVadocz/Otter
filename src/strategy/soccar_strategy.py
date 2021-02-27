@@ -234,11 +234,9 @@ class SoccarStrategy(Strategy):
             pad_index = message.target
             self.reserved_pads[message.index] = pad_index
 
-        return
-
-        # TODO Redo this.
+        # TODO Redo this?
         if isinstance(self.move, Strike):
-            # Teammate can hit it faster than me, I will move towards centre.
+            # Teammate can hit it faster than me, I will move to follow-up.
             if (
                 message.action_type == ActionType.BALL
                 and message.time > 0.0
@@ -252,11 +250,12 @@ class SoccarStrategy(Strategy):
                 central_position: vec3 = (
                     self.info.ball.position
                     + self.info.goals[self.info.car.team].position
-                ) / 3
-                # Division by 3 means we are taking the average including (0,0,0)
+                ) / 2
                 centralize: Goto = Goto(self.info, xy(central_position))
-                centralize.drive.finished_dist = 2000
+                centralize.drive.finished_dist = 2500
                 self.move = centralize
+
+        return
 
         if message.action_type == ActionType.DEMO:
             pass
