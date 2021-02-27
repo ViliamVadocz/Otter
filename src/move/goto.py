@@ -73,6 +73,7 @@ class Goto(Move):
                     # RLU is weird and left() actually points right.
                     self.speed_flip = SpeedFlip(self.info, spin_right=left)
                 self.drive.target_speed = MAX_CAR_SPEED
+            self.drive.target = self.target
             self.drive.update()
             self.controls = self.drive.controls
 
