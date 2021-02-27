@@ -240,7 +240,7 @@ class SoccarStrategy(Strategy):
             if (
                 message.action_type == ActionType.BALL
                 and message.time > 0.0
-                and message.time < self.move.target.time - 0.2
+                and message.time < self.move.target.time + 0.2
             ) or (
                 message.action_type == ActionType.WAIT
                 and message.ready > 0.0
@@ -252,7 +252,7 @@ class SoccarStrategy(Strategy):
                     + self.info.goals[self.info.car.team].position
                 ) / 2
                 centralize: Goto = Goto(self.info, xy(central_position))
-                centralize.drive.finished_dist = 2500
+                centralize.drive.finished_dist = 1000
                 self.move = centralize
 
         return
