@@ -40,6 +40,7 @@ class Strategy(ABC):
             self.move = None
         self.last_demolished = self.info.car.demolished
         # ... if newly inactive.
+        # TODO GameState is also Inactive when the game is paused, so that interrupts whatever the bot is doing.
         if (self.info.state == GameState.Inactive) and not self.last_inactive:
             self.move = None
         self.last_inactive = self.info.state == GameState.Inactive
