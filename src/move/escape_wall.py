@@ -20,32 +20,32 @@ class EscapeWall(Move):
         self.drive: Drive = Drive(info, self.get_target())
 
     def update(self):
-        if self.move:
-            self.interruptible = False
-            self.move.step(self.info.dt)
-            self.controls = self.move.controls
-            self.finished = self.move.finished
-            return
+        # if self.move:
+        #     self.interruptible = False
+        #     self.move.step(self.info.dt)
+        #     self.controls = self.move.controls
+        #     self.finished = self.move.finished
+        #     return
 
         car: Car = self.info.car
         self.drive.target = self.get_target()
 
-        if dot(car.velocity, car.up()) < 100:
-            if car.velocity.z > 700:
-                # Dodge away from wall.
-                direction: vec2 = vec2(car.left() * sgn(dot(car.left(), car.velocity)))
-                self.move = Dodge(car)
-                self.move.direction = direction
-            elif norm(car.velocity) < 1000 and car.forward().z > 0.6:
-                # Jump down from wall.
-                self.move = Jump(car)
-                self.move.duration = MAX_FIRST_JUMP_HOLD
+        # if dot(car.velocity, car.up()) < 100:
+        #     if car.velocity.z > 700:
+        #         # Dodge away from wall.
+        #         direction: vec2 = vec2(car.left() * sgn(dot(car.left(), car.velocity)))
+        #         self.move = Dodge(car)
+        #         self.move.direction = direction
+        #     elif norm(car.velocity) < 1000 and car.forward().z > 0.6:
+        #         # Jump down from wall.
+        #         self.move = Jump(car)
+        #         self.move.duration = MAX_FIRST_JUMP_HOLD
 
-        if self.move:
-            self.interruptible = False
-            self.move.step(self.info.dt)
-            self.controls = self.move.controls
-            return
+        # if self.move:
+        #     self.interruptible = False
+        #     self.move.step(self.info.dt)
+        #     self.controls = self.move.controls
+        #     return
 
         self.drive.update()
         self.controls = self.drive.controls
