@@ -18,6 +18,7 @@ from rlutilities.linear_algebra import dot, sgn, norm, vec3, normalize
 
 MAX_BOOST_ANGLE = 0.3
 HANDBRAKE_ANGLE = 1.5
+HANDBRAKE_SPEED_RANGE = (800, 1400)
 DEFAULT_FINISHED_DIST: float = 140
 
 
@@ -65,7 +66,11 @@ class Drive(Move):
 
         # Steering.
         self.controls.steer = 2 / (1 + exp(-5.0 * angle)) - 1
-        self.controls.handbrake = abs_angle > HANDBRAKE_ANGLE and not on_wall
+        self.controls.handbrake = (
+            abs_angle > HANDBRAKE_ANGLE
+            and HANDBRAKE_SPEED_RANGE[0] < speed < HANDBRAKE_SPEED_RANGE[1]
+            and not on_wall
+        )
         if self.controls.handbrake:
             if dot(car.velocity, car.forward()) * self.target_speed < 0:
                 self.controls.handbrake = False
