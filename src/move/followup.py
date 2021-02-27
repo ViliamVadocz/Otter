@@ -8,7 +8,7 @@ class Followup(Goto):
         super().__init__(
             info, (info.ball.position + info.goals[info.car.team].position) / 2
         )
-        self.drive.finished_dist = 1500
+        self.drive.finished_dist = 2000
 
     def update(self):
         self.target = self.get_target()

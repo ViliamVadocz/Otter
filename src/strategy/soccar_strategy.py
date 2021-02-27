@@ -252,7 +252,7 @@ class SoccarStrategy(Strategy):
                     self.tmcp_handler.send_boost_action(pad_index)
                 # Go do something else if they're closer.
                 else:
-                    self.move = None
+                    self.move.finished = True
 
         # TODO Redo this?
         if (
@@ -271,6 +271,18 @@ class SoccarStrategy(Strategy):
             ):
                 self.tmcp_handler.send_wait_action(self.move.target.time)
                 self.move = Followup(self.info)
+
+        elif isinstance(self.move, Followup):
+            # If first man send a different message than BALL, we should re-evaluate.
+            if (
+                message.index
+                == min(
+                    self.info.get_teammates(),
+                    key=lambda car: dist(car.position, self.info.ball.position),
+                ).id
+                and message.action_type != ActionType.BALL
+            ):
+                self.move.finished = True
 
         # Keep track of goalie.
         if self.goalie is not None and message.index == self.goalie:
