@@ -6,6 +6,7 @@ from tmcp import ActionType, TMCPMessage
 from move.goto import Goto
 from move.idle import Idle
 from move.move import Move
+from move.followup import Followup
 from move.recovery import Recovery
 from utils.vectors import dist, alignment
 from move.escape_wall import EscapeWall
@@ -239,8 +240,11 @@ class SoccarStrategy(Strategy):
             self.reserved_pads[message.index] = pad_index
 
         # TODO Redo this?
-        if isinstance(self.move, Strike):
-            # Teammate can hit it faster than me, I will move to follow-up.
+        if (
+            isinstance(self.move, Strike)
+            and self.move.target.time - self.info.time > 0.3
+        ):
+            # Teammate has committed or can hit it faster than me, move to follow-up.
             if (
                 message.action_type == ActionType.BALL
                 and message.time > 0.0
@@ -251,13 +255,7 @@ class SoccarStrategy(Strategy):
                 and message.ready < self.move.target.time - 0.2
             ):
                 self.tmcp_handler.send_wait_action(self.move.target.time)
-                central_position: vec3 = (
-                    self.move.target.position
-                    + self.info.goals[self.info.car.team].position
-                ) / 2
-                centralize: Goto = Goto(self.info, xy(central_position))
-                centralize.drive.finished_dist = 1500
-                self.move = centralize
+                self.move = Followup(self.info)
 
         # Keep track of goalie.
         if self.goalie is not None and message.index == self.goalie:
