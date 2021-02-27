@@ -34,7 +34,31 @@ class MyScript(BaseScript):
             for message in new_messages:
                 bot_name = packet.game_cars[message.index].name
                 action_type: ActionType = message.action_type
-                print(f"[{bot_name}]: {action_type}")
+
+                # Extra info.
+                if action_type == ActionType.BALL:
+                    if message.time < 0.0:
+                        extra = "(-)"
+                    else:
+                        extra = f"({message.time:.1f})"
+                elif action_type == ActionType.BOOST:
+                    extra = f"-> {message.target}"
+                elif action_type == ActionType.WAIT:
+                    if message.ready < 0.0:
+                        extra = "(-)"
+                    else:
+                        extra = f"({message.ready:.1f})"
+                elif action_type == ActionType.DEMO:
+                    demo_target = packet.game_cars[message.target].name
+                    extra = f"-> {demo_target} "
+                    if message.time < 0.0:
+                        extra += "(-)"
+                    else:
+                        extra += f"({message.time:.1f})"
+                else:
+                    extra = ""
+
+                print(f"[{bot_name}]: {action_type} {extra}")
 
 
 if __name__ == "__main__":
