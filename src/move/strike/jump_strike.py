@@ -67,7 +67,8 @@ class JumpStrike(Strike):
                 self.jump.update()
             self.controls = self.jump.controls
             if time_left < 1 / 15:
-                self.finished = self.jump.finished
+                if self.jump.finished:
+                    self.finished = True
             return
 
         # Calculations.
