@@ -140,23 +140,23 @@ class SoccarStrategy(Strategy):
         goal_width: float = self.info.goals[self.info.car.team].width
 
         # Use the positioning of our teammates to determine whether to go for the ball.
-        teammate_behind: bool = False
-        if not self.info.get_teammates() or dist(target.position, our_goal) < 3000:
-            teammate_behind = True
-        else:
-            for car in self.info.get_teammates():
-                car_position: vec3 = car.position + car.velocity * (
-                    target.time - car.time
-                )
-                teammate_behind = (
-                    dot(
-                        car_position - self.info.car.position,
-                        self.info.car.position - target.position,
-                    )
-                    > 0
-                )
-                if teammate_behind:
-                    break
+        # teammate_behind: bool = False
+        # if not self.info.get_teammates() or dist(target.position, our_goal) < 3000:
+        #     teammate_behind = True
+        # else:
+        #     for car in self.info.get_teammates():
+        #         car_position: vec3 = car.position + car.velocity * (
+        #             target.time - car.time
+        #         )
+        #         teammate_behind = (
+        #             dot(
+        #                 car_position - self.info.car.position,
+        #                 self.info.car.position - target.position,
+        #             )
+        #             > 0
+        #         )
+        #         if teammate_behind:
+        #             break
 
         # Choose to grab boost or rotate to backpost.
         if target.time - self.info.time > STRIKE_PRIORITY_TIME:
@@ -186,14 +186,14 @@ class SoccarStrategy(Strategy):
                     return go_backpost
 
         # Go defend if a teammate isn't backing up our strike.
-        if not teammate_behind:
-            defensive_position: vec3 = self.info.ball.position + (
-                our_goal - self.info.ball.position
-            ) * 0.8
-            go_defense: Goto = Goto(self.info, xy(defensive_position))
-            go_defense.drive.finished_dist = 2000
-            self.tmcp_handler.send_wait_action(target.time)
-            return go_defense
+        # if not teammate_behind:
+        #     defensive_position: vec3 = self.info.ball.position + (
+        #         our_goal - self.info.ball.position
+        #     ) * 0.8
+        #     go_defense: Goto = Goto(self.info, xy(defensive_position))
+        #     go_defense.drive.finished_dist = 2000
+        #     self.tmcp_handler.send_wait_action(target.time)
+        #     return go_defense
 
         # Go for a double-jump-strike.
         if double_jump_target.time < target.time - DOUBLE_JUMP_TIME_HANDICAP:
