@@ -41,6 +41,7 @@ class SoccarStrategy(Strategy):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.reserved_pads: Mapping[int, int] = dict()
+        self.goalie = None
 
     def find_base_move(self) -> Move:
         # Idle.
@@ -170,7 +171,10 @@ class SoccarStrategy(Strategy):
                     # Reserve boost pad.
                     self.tmcp_handler.send_boost_action(self.info.pads.index(pad))
                     return PickupBoost(self.info, pad)
-                elif dot(our_goal, self.info.car.position - target.position) < 0:
+                elif (
+                    self.goalie is None
+                    and dot(our_goal, self.info.car.position - target.position) < 0
+                ):
                     # Rotate backpost.
                     backpost: vec3 = vec3(our_goal)
                     backpost += BACKPOST_GOAL_CAR_LERP_Y * (
@@ -248,18 +252,22 @@ class SoccarStrategy(Strategy):
             ):
                 self.tmcp_handler.send_wait_action(self.move.target.time)
                 central_position: vec3 = (
-                    self.info.ball.position
+                    self.move.target.position
                     + self.info.goals[self.info.car.team].position
                 ) / 2
                 centralize: Goto = Goto(self.info, xy(central_position))
-                centralize.drive.finished_dist = 1000
+                centralize.drive.finished_dist = 1500
                 self.move = centralize
 
-        return
-
-        if message.action_type == ActionType.DEMO:
-            pass
-        if message.action_type == ActionType.WAIT:
-            pass
+        # Keep track of goalie.
+        if self.goalie is not None and message.index == self.goalie:
+            self.goalie = None
         if message.action_type == ActionType.DEFEND:
-            pass
+            self.goalie = message.index
+
+        # if message.action_type == ActionType.DEMO:
+        #     pass
+        # if message.action_type == ActionType.WAIT:
+        #     pass
+        # if message.action_type == ActionType.DEFEND:
+        #     pass
