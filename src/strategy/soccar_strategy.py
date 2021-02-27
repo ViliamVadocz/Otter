@@ -11,6 +11,7 @@ from utils.vectors import dist, alignment
 from move.escape_wall import EscapeWall
 from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
+from move.strike.strike import Strike
 from rlutilities.simulation import (
     Ball,
     BoostPad,
@@ -44,6 +45,7 @@ class SoccarStrategy(Strategy):
     def find_base_move(self) -> Move:
         # Idle.
         if self.info.state == GameState.Inactive:
+            self.tmcp_handler.send_wait_action(-1)
             return Idle(self.info)
 
         # Filter the large-pads for non-reserved active ones.
@@ -219,16 +221,46 @@ class SoccarStrategy(Strategy):
         for bot_index, pad_index in self.reserved_pads.items():
             if pad_index is None:
                 continue
-            if dist(self.info.cars[bot_index], self.info.pads[pad_index]) < 200:
+            if (
+                dist(
+                    self.info.cars[bot_index].position,
+                    self.info.pads[pad_index].position,
+                )
+                < 200
+            ):
                 self.reserved_pads[bot_index] = None
-
-        # Handle different types of messages.
-        if message.action_type == ActionType.BALL:
-            pass
-        elif message.action_type == ActionType.BOOST:
+        # Reserve a pad.
+        if message.action_type == ActionType.BOOST:
             pad_index = message.target
             self.reserved_pads[message.index] = pad_index
-        elif message.action_type == ActionType.DEMO:
+
+        return
+
+        # TODO Redo this.
+        if isinstance(self.move, Strike):
+            # Teammate can hit it faster than me, I will move towards centre.
+            if (
+                message.action_type == ActionType.BALL
+                and message.time > 0.0
+                and message.time < self.move.target.time - 0.2
+            ) or (
+                message.action_type == ActionType.WAIT
+                and message.ready > 0.0
+                and message.ready < self.move.target.time - 0.2
+            ):
+                self.tmcp_handler.send_wait_action(self.move.target.time)
+                central_position: vec3 = (
+                    self.info.ball.position
+                    + self.info.goals[self.info.car.team].position
+                ) / 3
+                # Division by 3 means we are taking the average including (0,0,0)
+                centralize: Goto = Goto(self.info, xy(central_position))
+                centralize.drive.finished_dist = 2000
+                self.move = centralize
+
+        if message.action_type == ActionType.DEMO:
             pass
-        elif message.action_type == ActionType.WAIT:
+        if message.action_type == ActionType.WAIT:
+            pass
+        if message.action_type == ActionType.DEFEND:
             pass
