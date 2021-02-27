@@ -59,8 +59,7 @@ class AerialStrike(Strike):
         if self.jump:
             self.jump.update()
             self.controls = self.jump.controls
-            if self.jump.finished:
-                self.finished = True
+            self.finished = self.jump.finished
             rendering.draw_rect_3d(self.target_position, 8, 8, True, rendering.red())
             return
 
