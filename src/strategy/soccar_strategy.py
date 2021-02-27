@@ -212,9 +212,9 @@ class SoccarStrategy(Strategy):
         if not self.info.car.on_ground:
             if not isinstance(self.move, Recovery):
                 return Recovery(self.info)
-        elif EscapeWall.on_wall(self.info.car):
-            if not isinstance(self.move, EscapeWall):
-                return EscapeWall(self.info)
+        # elif EscapeWall.on_wall(self.info.car):
+        #     if not isinstance(self.move, EscapeWall):
+        #         return EscapeWall(self.info)
         return None
 
     def handle_tmcp_message(self, message: TMCPMessage):
