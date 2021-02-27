@@ -1,4 +1,4 @@
-from math import pi, atan2
+from math import pi, atan2, isinf
 from typing import Any, Tuple, Union, Callable, Optional
 
 from utils import rendering
@@ -98,7 +98,7 @@ class JumpStrike(Strike):
             time_to_height: float = self.__class__.JUMP_HEIGHT_TO_TIME(
                 height, dot(car.up(), self.info.gravity)
             )
-            if direction > 0.9 and time_to_height > time_left - 1 / 60:
+            if not isinf(time_to_height) and direction > 0.9 and time_to_height > time_left - 1 / 60:
                 self.start_jump(time_left)
                 return
         else:
