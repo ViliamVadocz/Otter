@@ -43,11 +43,11 @@ class MyScript(BaseScript):
                         extra = f"({message.time:.1f})"
                 elif action_type == ActionType.BOOST:
                     extra = f"-> {message.target}"
-                elif action_type == ActionType.WAIT:
-                    if message.ready < 0.0:
+                elif action_type == ActionType.READY:
+                    if message.time < 0.0:
                         extra = "(-)"
                     else:
-                        extra = f"({message.ready:.1f})"
+                        extra = f"({message.time:.1f})"
                 elif action_type == ActionType.DEMO:
                     demo_target = packet.game_cars[message.target].name
                     extra = f"-> {demo_target} "

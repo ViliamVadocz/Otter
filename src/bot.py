@@ -19,7 +19,7 @@ class Otter(BaseAgent):
         self.info: GameInfo = GameInfo(self)
         self.tmcp_handler = TMCPHandler(self)
         # If the package version doesn't match what we expect, disable comms.
-        if TMCP_VERSION != [0, 7]:
+        if TMCP_VERSION != [0, 8]:
             self.tmcp_handler.disable()
         self.strategy: Strategy = self.pick_strategy()
         rendering.bind_renderer(self.renderer)

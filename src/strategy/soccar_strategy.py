@@ -47,7 +47,7 @@ class SoccarStrategy(Strategy):
     def find_base_move(self) -> Move:
         # Idle.
         if self.info.state == GameState.Inactive:
-            self.tmcp_handler.send_wait_action(-1)
+            self.tmcp_handler.send_ready_action(-1)
             return Idle(self.info)
 
         # Filter the large-pads for non-reserved active ones.
@@ -187,7 +187,7 @@ class SoccarStrategy(Strategy):
                     backpost.z = self.info.car.hitbox_widths.z
                     go_backpost: Goto = Goto(self.info, xy(backpost))
                     go_backpost.drive.finished_dist = 800
-                    self.tmcp_handler.send_wait_action(-1.0)
+                    self.tmcp_handler.send_ready_action(-1.0)
                     return go_backpost
 
         # Go defend if a teammate isn't backing up our strike.
@@ -197,7 +197,7 @@ class SoccarStrategy(Strategy):
         #     ) * 0.8
         #     go_defense: Goto = Goto(self.info, xy(defensive_position))
         #     go_defense.drive.finished_dist = 2000
-        #     self.tmcp_handler.send_wait_action(target.time)
+        #     self.tmcp_handler.send_ready_action(target.time)
         #     return go_defense
 
         # Go for a double-jump-strike.
@@ -265,11 +265,11 @@ class SoccarStrategy(Strategy):
                 and message.time > 0.0
                 and message.time < self.move.target.time + 0.2
             ) or (
-                message.action_type == ActionType.WAIT
-                and message.ready > 0.0
-                and message.ready < self.move.target.time - 0.2
+                message.action_type == ActionType.READY
+                and message.time > 0.0
+                and message.time < self.move.target.time - 0.2
             ):
-                self.tmcp_handler.send_wait_action(self.move.target.time)
+                self.tmcp_handler.send_ready_action(self.move.target.time)
                 self.move = Followup(self.info)
 
         elif isinstance(self.move, Followup):
@@ -292,7 +292,7 @@ class SoccarStrategy(Strategy):
 
         # if message.action_type == ActionType.DEMO:
         #     pass
-        # if message.action_type == ActionType.WAIT:
+        # if message.action_type == ActionType.READY:
         #     pass
         # if message.action_type == ActionType.DEFEND:
         #     pass
