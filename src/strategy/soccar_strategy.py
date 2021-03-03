@@ -8,7 +8,7 @@ from move.idle import Idle
 from move.move import Move
 from move.followup import Followup
 from move.recovery import Recovery
-from utils.vectors import dist, alignment
+from utils.vectors import dist, alignment, direction
 from move.escape_wall import EscapeWall
 from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
@@ -141,25 +141,6 @@ class SoccarStrategy(Strategy):
         our_goal: vec3 = self.info.goals[self.info.car.team].position
         goal_width: float = self.info.goals[self.info.car.team].width
 
-        # Use the positioning of our teammates to determine whether to go for the ball.
-        # teammate_behind: bool = False
-        # if not self.info.get_teammates() or dist(target.position, our_goal) < 3000:
-        #     teammate_behind = True
-        # else:
-        #     for car in self.info.get_teammates():
-        #         car_position: vec3 = car.position + car.velocity * (
-        #             target.time - car.time
-        #         )
-        #         teammate_behind = (
-        #             dot(
-        #                 car_position - self.info.car.position,
-        #                 self.info.car.position - target.position,
-        #             )
-        #             > 0
-        #         )
-        #         if teammate_behind:
-        #             break
-
         # Choose to grab boost or rotate to backpost.
         if target.time - self.info.time > STRIKE_PRIORITY_TIME:
             if abs(target.position.x) > MIN_SAFE_BALL_X:
@@ -190,15 +171,41 @@ class SoccarStrategy(Strategy):
                     self.tmcp_handler.send_ready_action(-1.0)
                     return go_backpost
 
-        # Go defend if a teammate isn't backing up our strike.
-        # if not teammate_behind:
-        #     defensive_position: vec3 = self.info.ball.position + (
-        #         our_goal - self.info.ball.position
-        #     ) * 0.8
-        #     go_defense: Goto = Goto(self.info, xy(defensive_position))
-        #     go_defense.drive.finished_dist = 2000
-        #     self.tmcp_handler.send_ready_action(target.time)
-        #     return go_defense
+        towards_our_goal: float = dot(
+            direction(self.info.car.position, target.position),
+            direction(our_goal, target.position),
+        )
+        if towards_our_goal > -0.5 and all(
+            [
+                dist(car.position, our_goal) > dist(self.info.car.position, our_goal)
+                for car in self.info.get_teammates()
+            ]
+        ):
+            # Go defend if the opponent can beat us to the ball.
+            opponent_target: Ball = min(
+                [
+                    next(
+                        (
+                            ball
+                            for ball in self.info.ball_prediction[::8]
+                            if JumpStrike.valid_target(
+                                self.info, car, ball.position, ball.time
+                            )
+                        ),
+                        None,
+                    )
+                    for car in self.info.get_opponents()
+                ],
+                key=lambda target: target.time if target else 10 ** 10,
+            )
+            if opponent_target and opponent_target.time < target.time - 0.5:
+                defensive_position: vec3 = opponent_target.position + (
+                    our_goal - opponent_target.position
+                ) * 0.8
+                go_defense: Goto = Goto(self.info, xy(defensive_position))
+                go_defense.drive.finished_dist = 2000
+                self.tmcp_handler.send_ready_action(target.time)
+                return go_defense
 
         # Go for a double-jump-strike.
         if double_jump_target.time < target.time - DOUBLE_JUMP_TIME_HANDICAP:
@@ -253,36 +260,6 @@ class SoccarStrategy(Strategy):
                 # Go do something else if they're closer.
                 else:
                     self.move.finished = True
-
-        # TODO Redo this?
-        if (
-            isinstance(self.move, Strike)
-            and self.move.target.time - self.info.time > 0.3
-        ):
-            # Teammate has committed or can hit it faster than me, move to follow-up.
-            if (
-                message.action_type == ActionType.BALL
-                and message.time > 0.0
-                and message.time < self.move.target.time + 0.2
-            ) or (
-                message.action_type == ActionType.READY
-                and message.time > 0.0
-                and message.time < self.move.target.time - 0.2
-            ):
-                self.tmcp_handler.send_ready_action(self.move.target.time)
-                self.move = Followup(self.info)
-
-        elif isinstance(self.move, Followup):
-            # If first man send a different message than BALL, we should re-evaluate.
-            if (
-                message.index
-                == min(
-                    self.info.get_teammates(),
-                    key=lambda car: dist(car.position, self.info.ball.position),
-                ).id
-                and message.action_type != ActionType.BALL
-            ):
-                self.move.finished = True
 
         # Keep track of goalie.
         if self.goalie is not None and message.index == self.goalie:
