@@ -34,6 +34,7 @@ MAX_DIST_ERROR = 50
 
 
 class JumpStrike(Strike):
+    HEIGHT_OFFSET_DISTANCE: float = 50
     OFFSET_DISTANCE: float = Ball.collision_radius + 35
     SOLVE_JUMP: Callable[[Car, vec3, vec3], Tuple[vec3, float]] = solve_jump
     JUMP_HEIGHT_TO_TIME: Callable[
@@ -48,14 +49,6 @@ class JumpStrike(Strike):
         )
         self.drive: Drive = Drive(info, self.target_position)
         self.jump: Optional[Union[Dodge, Any]] = None
-
-    @staticmethod
-    def get_height_min_max(info: GameInfo) -> Tuple[float, float]:
-        return 0, info.MAX_JUMP_HEIGHT + 60
-
-    @staticmethod
-    def get_max_time_to_jump(info: GameInfo) -> float:
-        return min(info.JUMP_PEAK_TIME, MAX_JUMP_DURATION + MAX_FIRST_JUMP_HOLD)
 
     def update(self):
         car = self.info.car
@@ -77,15 +70,13 @@ class JumpStrike(Strike):
 
         # Calculations.
         car_to_target = self.target_position - car.position
-        height: float = dot(car_to_target, car.up())
+        height: float = max(
+            0, dot(car_to_target, car.up()) - self.__class__.HEIGHT_OFFSET_DISTANCE
+        )
         car_to_target_flat = flatten_by_normal(car_to_target, car.up())
         distance: float = norm(car_to_target_flat)
         distance -= car.hitbox_widths.x + car.hitbox_offset.x
         self.drive.target_speed = distance / max(1e-10, time_left)
-
-        # If the target height is out of bounds, allow this move to be interrupted.
-        min_height, max_height = self.get_height_min_max(self.info)
-        self.interruptible = not (min_height * 0.95 < height < max_height / 0.95)
 
         self.drive.update()
         self.controls = self.drive.controls
@@ -98,7 +89,11 @@ class JumpStrike(Strike):
             time_to_height: float = self.__class__.JUMP_HEIGHT_TO_TIME(
                 height, dot(car.up(), self.info.gravity)
             )
-            if not isinf(time_to_height) and direction > 0.9 and time_to_height > time_left - 1 / 60:
+            if (
+                not isinf(time_to_height)
+                and direction > 0.9
+                and time_to_height > time_left - 1 / 60
+            ):
                 self.start_jump(time_left)
                 return
         else:
@@ -123,18 +118,19 @@ class JumpStrike(Strike):
         self.jump = Dodge(self.info.car)
         self.jump.jump_duration = 0.2
         self.jump.delay = max(1 / 60 + self.jump.jump_duration, time_left - 1 / 30,)
-        self.jump.direction = vec2(self.target.position - self.target_position)
+        end_car_position: vec3 = self.info.car.position + self.info.car.velocity * time_left + 0.5 * self.info.gravity * time_left ** 2
+        self.jump.direction = vec2(self.target.position - end_car_position)
         self.jump.step(self.info.dt)
         self.controls = self.jump.controls
 
     @classmethod
     def valid_target(cls, info: GameInfo, car: Car, target: vec3, time: float) -> bool:
         local: vec3 = dot(car.orientation, target - car.position)
-        min_height, max_height = cls.get_height_min_max(info)
-        if not (min_height < local.z < max_height):
+        height: float = max(0, local.z - cls.HEIGHT_OFFSET_DISTANCE)
+        T = cls.JUMP_HEIGHT_TO_TIME(height, dot(car.up(), info.gravity))
+        if isinf(T):
             return False
 
-        T = cls.JUMP_HEIGHT_TO_TIME(local.z, dot(car.up(), info.gravity))
         s: float = norm(xy(local))
         u: float = dot(car.velocity, direction(car.position, target))
         t: float = (time - car.time - T)
@@ -144,4 +140,4 @@ class JumpStrike(Strike):
         a2: float = (2 * (s - t2 * max(0, u))) / (t2 ** 2)
 
         angle: float = atan2(local.y, local.x)
-        return (a2 * (0.75 - abs(angle) * 0.3)) > a and t2 < t + T
+        return (a2 * (0.8 - abs(angle) * 0.25)) > a and t2 < t + T

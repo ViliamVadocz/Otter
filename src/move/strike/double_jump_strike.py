@@ -18,14 +18,6 @@ class DoubleJumpStrike(JumpStrike):
     def __init__(self, info: GameInfo, target: Ball, goal: vec3):
         super().__init__(info, target, goal)
 
-    @staticmethod
-    def get_height_min_max(info: GameInfo) -> Tuple[float, float]:
-        return info.MAX_JUMP_HEIGHT, info.MAX_DOUBLE_JUMP_HEIGHT + 60
-
-    @staticmethod
-    def get_max_time_to_jump(info: GameInfo) -> float:
-        return info.DOUBLE_JUMP_PEAK_TIME + 0.2
-
     def start_jump(self, time_left: float):
         self.jump = DoubleJump(self.info, self.target_position)
         self.jump.update()
