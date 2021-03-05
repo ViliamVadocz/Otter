@@ -131,10 +131,10 @@ class Car():
 class ControlPoint():
 
     @overload
-    def __init__(self, arg0: vec3, arg1: vec3, arg2: vec3) -> None: 
+    def __init__(self) -> None: 
         pass
     @overload
-    def __init__(self) -> None: ...
+    def __init__(self, arg0: vec3, arg1: vec3, arg2: vec3) -> None: ...
 
     n: vec3
     p: vec3
@@ -167,11 +167,11 @@ class Field():
 
     @staticmethod
     @overload
-    def collide(arg0: obb) -> ray: 
+    def collide(arg0: sphere) -> ray: 
         pass
     @staticmethod
     @overload
-    def collide(arg0: sphere) -> ray: ...
+    def collide(arg0: obb) -> ray: ...
     @staticmethod
     def raycast_any(arg0: ray) -> ray: ...
     @staticmethod
@@ -179,7 +179,7 @@ class Field():
 
     pass
 class Game():
-    gravity = None # type: rlutilities.linear_algebra.vec3 # value = <rlutilities.linear_algebra.vec3 object at 0x0000029C892763E8>
+    gravity = None # type: rlutilities.linear_algebra.vec3 # value = <rlutilities.linear_algebra.vec3 object at 0x0000020491B071F0>
     map = 'map_not_set'
 
     def __init__(self) -> None: ...
@@ -263,10 +263,10 @@ class obb():
 class ray():
 
     @overload
-    def __init__(self, arg0: vec3, arg1: vec3) -> None: 
+    def __init__(self) -> None: 
         pass
     @overload
-    def __init__(self) -> None: ...
+    def __init__(self, arg0: vec3, arg1: vec3) -> None: ...
 
     direction: vec3
     start: vec3
@@ -274,10 +274,10 @@ class ray():
 class sphere():
 
     @overload
-    def __init__(self) -> None: 
+    def __init__(self, arg0: vec3, arg1: float) -> None: 
         pass
     @overload
-    def __init__(self, arg0: vec3, arg1: float) -> None: ...
+    def __init__(self) -> None: ...
 
     center: vec3
     radius: float
