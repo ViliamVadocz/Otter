@@ -7,13 +7,13 @@ from pathlib import Path
 from rlbot.agents.base_agent import SimpleControllerState
 
 current_dir = Path(__file__).parent.absolute()
-sys.path.insert(1, current_dir.parent / "src")
+sys.path.insert(1, str(current_dir.parent.parent / "src"))
 
 from bot import Otter
 
-DATA_FILE = current_dir / "profile_data.dat"
-TEXT_FILE = current_dir / "profile_data.txt"
-MATCH_CONFIG = current_dir / "profile_match.cfg"
+DATA_FILE = str(current_dir / "profile_data.dat")
+TEXT_FILE = str(current_dir / "profile_data.txt")
+MATCH_CONFIG = str(current_dir / "profile_match.cfg")
 
 MAX_FRAMES = 30_000
 
