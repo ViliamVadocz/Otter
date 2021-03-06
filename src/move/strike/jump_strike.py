@@ -25,6 +25,7 @@ from rlutilities.linear_algebra import (
     norm,
     vec2,
     vec3,
+    look_at,
     normalize,
     angle_between,
 )
@@ -119,7 +120,9 @@ class JumpStrike(Strike):
         self.jump.jump_duration = 0.2
         self.jump.delay = max(1 / 60 + self.jump.jump_duration, time_left - 1 / 30,)
         end_car_position: vec3 = self.info.car.position + self.info.car.velocity * time_left + 0.5 * self.info.gravity * time_left ** 2
-        self.jump.direction = vec2(self.target.position - end_car_position)
+        dodge_direction: vec3 = direction(end_car_position, self.target.position)
+        self.jump.direction = vec2(dodge_direction)
+        self.jump.preorientation = look_at(vec3(0, 0, dodge_direction.z), vec3(0, 0, 1))
         self.jump.step(self.info.dt)
         self.controls = self.jump.controls
 
