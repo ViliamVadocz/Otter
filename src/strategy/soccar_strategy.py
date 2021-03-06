@@ -78,7 +78,7 @@ class SoccarStrategy(Strategy):
 
         opponent_goal: vec3 = self.info.goals[not self.info.car.team].position
 
-        target: Ball = next(
+        target: Optional[Ball] = next(
             (
                 ball
                 for ball in self.info.ball_prediction
@@ -86,18 +86,18 @@ class SoccarStrategy(Strategy):
                     self.info, self.info.car, ball.position, ball.time
                 )
             ),
-            self.info.ball_prediction[-1],
+            None,
         )
 
         # Escape the wall.
         if EscapeWall.on_wall(self.info.car):
             # Strike the ball if possible.
-            if target.time - self.info.time < WALL_STRIKE_TIME:
+            if target and target.time - self.info.time < WALL_STRIKE_TIME:
                 self.tmcp_handler.send_ball_action(target.time)
                 return JumpStrike(self.info, target, opponent_goal)
             return EscapeWall(self.info)
 
-        double_jump_target: Ball = next(
+        double_jump_target: Optional[Ball] = next(
             (
                 ball
                 for ball in self.info.ball_prediction
@@ -105,10 +105,10 @@ class SoccarStrategy(Strategy):
                     self.info, self.info.car, ball.position, ball.time
                 )
             ),
-            self.info.ball_prediction[-1],
+            None,
         )
 
-        aerial_target: Ball = next(
+        aerial_target: Optional[Ball] = next(
             (
                 ball
                 for ball in self.info.ball_prediction
@@ -123,12 +123,16 @@ class SoccarStrategy(Strategy):
                     self.info, self.info.car, ball.position, ball.time, opponent_goal
                 )
             ),
-            self.info.ball_prediction[-1],
+            None,
         )
 
         # Go for an aerial-strike.
-        if aerial_target.time < double_jump_target.time - AERIAL_TIME_HANDICAP or (
-            not self.info.car.on_ground and aerial_target.time - self.info.time < 0.5
+        if aerial_target and (
+            aerial_target.time < double_jump_target.time - AERIAL_TIME_HANDICAP
+            or (
+                not self.info.car.on_ground
+                and aerial_target.time - self.info.time < 0.5
+            )
         ):
             self.tmcp_handler.send_ball_action(aerial_target.time)
             return AerialStrike(self.info, aerial_target, opponent_goal)
@@ -142,8 +146,8 @@ class SoccarStrategy(Strategy):
         goal_width: float = self.info.goals[self.info.car.team].width
 
         # Choose to grab boost or rotate to backpost.
-        if target.time - self.info.time > STRIKE_PRIORITY_TIME:
-            if abs(target.position.x) > MIN_SAFE_BALL_X:
+        if not target or target.time - self.info.time > STRIKE_PRIORITY_TIME:
+            if not target or abs(target.position.x) > MIN_SAFE_BALL_X:
                 # Grab boost.
                 if self.info.car.boost < LOW_BOOST_AMOUNT and pads:
                     defensive_position: vec3 = (self.info.car.position + our_goal) / 2
@@ -153,7 +157,7 @@ class SoccarStrategy(Strategy):
                     # Reserve boost pad.
                     self.tmcp_handler.send_boost_action(self.info.pads.index(pad))
                     return PickupBoost(self.info, pad)
-                elif (
+                elif not target or (
                     self.goalie is None
                     and dot(our_goal, self.info.car.position - target.position) < 0
                 ):
@@ -163,13 +167,16 @@ class SoccarStrategy(Strategy):
                         self.info.car.position - backpost
                     )
                     backpost.x = copysign(
-                        goal_width / 2 - BACKPOST_OFFSET_X, -target.position.x
+                        goal_width / 2 - BACKPOST_OFFSET_X,
+                        -(target.position.x if target else self.info.ball.position.x),
                     )
                     backpost.z = self.info.car.hitbox_widths.z
                     go_backpost: Goto = Goto(self.info, xy(backpost))
                     go_backpost.drive.finished_dist = 800
                     self.tmcp_handler.send_ready_action(-1.0)
                     return go_backpost
+
+        # At this point we are guaranteed to have a target.
 
         towards_our_goal: float = dot(
             direction(self.info.car.position, target.position),
@@ -208,7 +215,10 @@ class SoccarStrategy(Strategy):
                 return go_defense
 
         # Go for a double-jump-strike.
-        if double_jump_target.time < target.time - DOUBLE_JUMP_TIME_HANDICAP:
+        if (
+            double_jump_target
+            and double_jump_target.time < target.time - DOUBLE_JUMP_TIME_HANDICAP
+        ):
             self.tmcp_handler.send_ball_action(double_jump_target.time)
             return DoubleJumpStrike(self.info, double_jump_target, opponent_goal)
 
