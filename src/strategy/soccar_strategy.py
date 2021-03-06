@@ -57,6 +57,8 @@ class SoccarStrategy(Strategy):
             if pad.type == BoostPadType.Full
             and pad.state == BoostPadState.Available
             and pad_index not in self.reserved_pads.values()
+            and ((pad.position.y - self.info.ball.position.y) > 0)
+            == bool(self.info.car.team)
         ]
 
         # Kickoff.
@@ -111,15 +113,16 @@ class SoccarStrategy(Strategy):
         aerial_target: Optional[Ball] = next(
             (
                 ball
-                for ball in self.info.ball_prediction
-                if alignment(
-                    self.info.car.position,
-                    ball.position,
-                    opponent_goal,
-                    normalize(self.info.gravity),
-                )
-                > MIN_AERIAL_ALIGNMENT
-                and AerialStrike.valid_target(
+                for ball in self.info.ball_prediction[::2]
+                if
+                # alignment(
+                #     self.info.car.position,
+                #     ball.position,
+                #     opponent_goal,
+                #     normalize(self.info.gravity),
+                # )
+                # > MIN_AERIAL_ALIGNMENT and
+                AerialStrike.valid_target(
                     self.info, self.info.car, ball.position, ball.time, opponent_goal
                 )
             ),
@@ -128,10 +131,16 @@ class SoccarStrategy(Strategy):
 
         # Go for an aerial-strike.
         if aerial_target and (
-            aerial_target.time < double_jump_target.time - AERIAL_TIME_HANDICAP
+            not target
             or (
-                not self.info.car.on_ground
-                and aerial_target.time - self.info.time < 0.5
+                dot(
+                    self.info.car.velocity,
+                    direction(self.info.car.position, aerial_target.position),
+                )
+                > dot(
+                    self.info.car.velocity,
+                    direction(self.info.car.position, target.position),
+                )
             )
         ):
             self.tmcp_handler.send_ball_action(aerial_target.time)
@@ -211,6 +220,9 @@ class SoccarStrategy(Strategy):
                 ) * 0.8
                 go_defense: Goto = Goto(self.info, xy(defensive_position))
                 go_defense.drive.finished_dist = 2000
+                go_defense.drive.target_speed = dist(
+                    self.info.car.position, defensive_position
+                )
                 self.tmcp_handler.send_ready_action(target.time)
                 return go_defense
 
