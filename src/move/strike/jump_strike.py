@@ -1,4 +1,4 @@
-from math import pi, log, atan2, isinf
+from math import pi, cos, log, atan2, isinf
 from typing import Any, Tuple, Union, Callable, Optional
 
 from utils import rendering
@@ -6,6 +6,7 @@ from move.drive import Drive
 from utils.const import (
     BOOST_ACC,
     BOOST_USAGE,
+    DODGE_IMPULSE,
     MAX_CAR_SPEED,
     MAX_JUMP_DURATION,
     MAX_NO_BOOST_SPEED,
@@ -78,6 +79,15 @@ class JumpStrike(Strike):
         distance: float = norm(car_to_target_flat)
         distance -= car.hitbox_widths.x + car.hitbox_offset.x
         self.drive.target_speed = distance / max(1e-10, time_left)
+        time_to_height: float = self.__class__.JUMP_HEIGHT_TO_TIME(
+            height, dot(car.up(), self.info.gravity)
+        )
+        self.drive.target = (
+            self.target_position
+            + 0.5
+            * self.info.gravity
+            * (0 if isinf(time_to_height) else time_to_height) ** 2
+        )
 
         self.drive.update()
         self.controls = self.drive.controls
@@ -86,9 +96,6 @@ class JumpStrike(Strike):
         if self.info.car.on_ground:
             direction: float = dot(
                 normalize(car_to_target_flat), normalize(self.info.car.velocity),
-            )
-            time_to_height: float = self.__class__.JUMP_HEIGHT_TO_TIME(
-                height, dot(car.up(), self.info.gravity)
             )
             if (
                 not isinf(time_to_height)
@@ -119,26 +126,42 @@ class JumpStrike(Strike):
         self.jump = Dodge(self.info.car)
         self.jump.jump_duration = 0.2
         self.jump.delay = max(1 / 60 + self.jump.jump_duration, time_left - 1 / 30,)
+
         end_car_position: vec3 = self.info.car.position + self.info.car.velocity * time_left + 0.5 * self.info.gravity * time_left ** 2
-        dodge_direction: vec3 = direction(end_car_position, self.target.position)
-        self.jump.direction = vec2(dodge_direction)
-        self.jump.preorientation = look_at(vec3(0, 0, dodge_direction.z), vec3(0, 0, 1))
+        ideal_direction: vec3 = direction(end_car_position, self.target.position)
+        # ideal_velocity: vec3 = ideal_direction * (norm(self.info.car.velocity) + DODGE_IMPULSE)
+        # self.jump.direction = vec2(ideal_velocity - self.info.car.velocity)
+        self.jump.direction = vec2(ideal_direction)
+        self.jump.preorientation = look_at(vec3(0, 0, ideal_direction.z), vec3(0, 0, 1))
+
         self.jump.step(self.info.dt)
         self.controls = self.jump.controls
 
     @classmethod
     def valid_target(cls, info: GameInfo, car: Car, target: vec3, time: float) -> bool:
-        local: vec3 = dot(car.orientation, target - car.position)
-        height: float = max(0, local.z - cls.HEIGHT_OFFSET_DISTANCE)
+        height: float = max(
+            0, dot(car.up(), target - car.position) - cls.HEIGHT_OFFSET_DISTANCE
+        )
         T = cls.JUMP_HEIGHT_TO_TIME(height, dot(car.up(), info.gravity))
         if isinf(T):
             return False
 
+        # Adjust destination for wall-hits.
+        destination: vec3 = target
+        destination += 0.5 * info.gravity * T ** 2
+        local = dot(car.orientation, destination - car.position)
+
+        # Specify conditions to be met.
         t: float = (time - car.time - T)
-
-        s: float = norm(xy(local))
-        u: float = dot(car.velocity, direction(car.position, target))
-        t2: float = get_time_to_reach_distance(s, max(0, u), car.boost)
-
         angle: float = atan2(local.y, local.x)
-        return t2 + T * (1 + 0.15) + abs(angle) * 0.4 < t
+        # t -= abs(angle) * 0.35
+        if t < 1 / 120:
+            return False
+        s: float = norm(xy(local))
+        u: float = max(0, dot(car.velocity, direction(car.position, target)))
+        d: float = (t * (s + T * u)) / (t + 2 * T)
+
+        # Can we meet those conditions?
+        t2: float = get_time_to_reach_distance(d, u, car.boost)
+        t2 += abs(angle) * 0.2
+        return t2 < t
