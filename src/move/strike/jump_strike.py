@@ -1,4 +1,4 @@
-from math import pi, atan2, isinf
+from math import pi, log, atan2, isinf
 from typing import Any, Tuple, Union, Callable, Optional
 
 from utils import rendering
@@ -134,13 +134,11 @@ class JumpStrike(Strike):
         if isinf(T):
             return False
 
+        t: float = (time - car.time - T)
+
         s: float = norm(xy(local))
         u: float = dot(car.velocity, direction(car.position, target))
-        t: float = (time - car.time - T)
-        a: float = (2 * (s - u * (t + T))) / (t * (t + 2 * T))
-
         t2: float = get_time_to_reach_distance(s, max(0, u), car.boost)
-        a2: float = (2 * (s - t2 * max(0, u))) / (t2 ** 2)
 
         angle: float = atan2(local.y, local.x)
-        return (a2 * (0.8 - abs(angle) * 0.25)) > a and t2 < t + T
+        return t2 + T * (1 + 0.075) + log(abs(angle) + 1) * 1.1 < t
