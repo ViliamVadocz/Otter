@@ -141,4 +141,4 @@ class JumpStrike(Strike):
         t2: float = get_time_to_reach_distance(s, max(0, u), car.boost)
 
         angle: float = atan2(local.y, local.x)
-        return t2 + T * (1 + 0.075) + log(abs(angle) + 1) * 1.1 < t
+        return t2 + T * (1 + 0.15) + abs(angle) * 0.4 < t
