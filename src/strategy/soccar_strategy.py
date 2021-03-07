@@ -139,10 +139,12 @@ class SoccarStrategy(Strategy):
                     self.info.car.velocity,
                     direction(self.info.car.position, aerial_target.position),
                 )
-                > dot(
+                > 0
+                and dot(
                     self.info.car.velocity,
                     direction(self.info.car.position, target.position),
                 )
+                < 0
             )
         ):
             self.tmcp_handler.send_ball_action(aerial_target.time)
