@@ -17,8 +17,8 @@ from utils.game_info import GameInfo
 from rlutilities.linear_algebra import dot, sgn, norm, vec3, normalize
 
 MAX_BOOST_ANGLE = 0.3
-HANDBRAKE_ANGLE = 1.5
-HANDBRAKE_SPEED_RANGE = (800, 1400)
+HANDBRAKE_ANGLE = 1
+HANDBRAKE_ANGLE_SPEED: float = 1.5
 DEFAULT_FINISHED_DIST: float = 140
 
 
@@ -51,11 +51,15 @@ class Drive(Move):
                 )
                 target = intermediate_target
 
-        car_to_target = target - car.position
-        angle = atan2(dot(car.left(), car_to_target), dot(car.forward(), car_to_target))
+        car_to_target: vec3 = target - car.position
+        local_target: vec3 = dot(car_to_target, car.orientation)
+        angle_velocity: float = dot(car.up(), car.angular_velocity)
+
+        # Angle to target.
+        angle: float = atan2(local_target.y, local_target.x)
         if self.target_speed < 0:
             angle = sgn(angle) * (pi - abs(angle))
-        abs_angle = abs(angle)
+        self.target_speed = abs(self.target_speed)
 
         # Clamp speed to maximum speed available due to target radius.
         local_radius: vec3 = dot(car.orientation, target - car.position)
@@ -65,34 +69,35 @@ class Drive(Move):
                 2
                 * max(
                     1e-10,
-                    abs(local_radius.y) + inaccuracy_sign * self.finished_dist / 2,
+                    abs(local_radius.y) + inaccuracy_sign * self.finished_dist * 0.25,
                 )
             )
             max_speed: float = max(max_speed, get_speed_from_radius(radius))
         desired_speed: float = max(-max_speed, min(max_speed, self.target_speed))
 
+        # Throttle and boost.
         speed = norm(car.velocity)
         throttle, boost = speed_controller(speed, desired_speed, self.info.dt)
-        # Prevent wall slipping.
         on_wall = dot(self.info.car.up(), normalize(-1 * self.info.gravity)) < 0.7
         if on_wall and abs(throttle) < 0.05:
             throttle = 0.05 * sgn(desired_speed - speed)
         self.controls.throttle = throttle
         self.controls.boost = (
-            boost and abs_angle < MAX_BOOST_ANGLE and speed < MAX_CAR_SPEED
+            boost and abs(angle) < MAX_BOOST_ANGLE and speed < MAX_CAR_SPEED
         )
 
         # Steering.
-        self.controls.steer = 2 / (1 + exp(-5.0 * angle)) - 1
+        self.controls.steer = 1000 * (angle - angle_velocity / 60) ** 3
+        self.controls.steer = max(-1, min(1, self.controls.steer))
         self.controls.handbrake = (
-            abs_angle > HANDBRAKE_ANGLE
-            and HANDBRAKE_SPEED_RANGE[0] < speed < HANDBRAKE_SPEED_RANGE[1]
+            abs(angle) > HANDBRAKE_ANGLE
+            and abs(angle_velocity) > HANDBRAKE_ANGLE_SPEED
             and not on_wall
         )
         if self.controls.handbrake:
             if dot(car.velocity, car.forward()) * self.target_speed < 0:
                 self.controls.handbrake = False
-            if dot(car.angular_velocity, car.up()) * angle * self.target_speed < 0:
+            if angle * angle_velocity < 0:
                 self.controls.handbrake = False
 
         self.finished = norm(car_to_target) < self.finished_dist
