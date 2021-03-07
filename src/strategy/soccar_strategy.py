@@ -69,6 +69,8 @@ class SoccarStrategy(Strategy):
                 for car in self.info.get_teammates()
             ]
             if any(closer):
+                if not pads:
+                    return Idle(self.info)
                 pad: BoostPad = min(
                     pads, key=lambda pad: dist(pad.position, self.info.car.position),
                 )
