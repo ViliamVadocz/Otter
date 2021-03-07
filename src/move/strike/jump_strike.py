@@ -149,12 +149,12 @@ class JumpStrike(Strike):
         # Adjust destination for wall-hits.
         destination: vec3 = target
         destination += 0.5 * info.gravity * T ** 2
-        local = dot(car.orientation, destination - car.position)
+        local = dot(destination - car.position, car.orientation)
 
         # Specify conditions to be met.
         t: float = (time - car.time - T)
         angle: float = atan2(local.y, local.x)
-        # t -= abs(angle) * 0.35
+        t -= abs(angle) * 0.4
         if t < 1 / 120:
             return False
         s: float = norm(xy(local))
@@ -163,5 +163,4 @@ class JumpStrike(Strike):
 
         # Can we meet those conditions?
         t2: float = get_time_to_reach_distance(d, u, car.boost)
-        t2 += abs(angle) * 0.2
         return t2 < t
