@@ -1,6 +1,6 @@
 from move.goto import Goto
 from utils.game_info import GameInfo
-from rlutilities.simulation import BoostPad, BoostPadState
+from rlutilities.simulation import BoostPad, BoostPadType, BoostPadState
 
 
 class PickupBoost(Goto):
@@ -10,6 +10,8 @@ class PickupBoost(Goto):
 
     def update(self):
         super().update()
+        if self.pad.type == BoostPadType.Partial:
+            self.controls.boost = False
         self.finished = (
             self.info.car.boost > 99 or self.pad.state == BoostPadState.Unavailable
         )

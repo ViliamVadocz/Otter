@@ -222,6 +222,23 @@ class SoccarStrategy(Strategy):
                 defensive_position: vec3 = opponent_target.position + (
                     our_goal - opponent_target.position
                 ) * 0.8
+
+                # Pickup small pads.
+                if self.info.car.boost < 60:
+                    small_pads: List[BoostPad] = [
+                        pad
+                        for pad_index, pad in enumerate(self.info.pads)
+                        if pad.type == BoostPadType.Partial
+                        and pad.state == BoostPadState.Available
+                        and pad_index not in self.reserved_pads.values()
+                    ]
+                    if small_pads:
+                        pad: BoostPad = min(
+                            small_pads,
+                            key=lambda pad: dist(pad.position, defensive_position),
+                        )
+                        return PickupBoost(self.info, pad)
+
                 go_defense: Goto = Goto(self.info, xy(defensive_position))
                 go_defense.drive.finished_dist = 2000
                 go_defense.drive.target_speed = dist(
