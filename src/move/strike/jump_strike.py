@@ -5,6 +5,7 @@ from utils import rendering
 from move.drive import Drive
 from utils.const import (
     BOOST_ACC,
+    BREAK_ACC,
     BOOST_USAGE,
     DODGE_IMPULSE,
     MAX_CAR_SPEED,
@@ -37,7 +38,7 @@ MAX_DIST_ERROR = 50
 
 class JumpStrike(Strike):
     HEIGHT_OFFSET_DISTANCE: float = 50
-    OFFSET_DISTANCE: float = Ball.collision_radius + 35
+    OFFSET_DISTANCE: float = Ball.collision_radius + 25
     SOLVE_JUMP: Callable[[Car, vec3, vec3], Tuple[vec3, float]] = solve_jump
     JUMP_HEIGHT_TO_TIME: Callable[
         [float, float, float], float
@@ -56,7 +57,6 @@ class JumpStrike(Strike):
         car = self.info.car
         time_left: float = self.target.time - self.info.time
 
-        super().update()
         if self.jump:
             rendering.draw_line_3d(
                 car.position, self.target_position, rendering.yellow(),
@@ -69,6 +69,8 @@ class JumpStrike(Strike):
             if time_left < 1 / 15:
                 self.finished = self.jump.finished
             return
+
+        super().update()
 
         # Calculations.
         car_to_target = self.target_position - car.position
@@ -125,14 +127,13 @@ class JumpStrike(Strike):
     def start_jump(self, time_left: float):
         self.jump = Dodge(self.info.car)
         self.jump.jump_duration = 0.2
-        self.jump.delay = max(1 / 60 + self.jump.jump_duration, time_left - 1 / 30,)
+        self.jump.delay = max(1 / 60 + self.jump.jump_duration, time_left - 1 / 15,)
 
         end_car_position: vec3 = self.info.car.position + self.info.car.velocity * time_left + 0.5 * self.info.gravity * time_left ** 2
         ideal_direction: vec3 = direction(end_car_position, self.target.position)
-        # ideal_velocity: vec3 = ideal_direction * (norm(self.info.car.velocity) + DODGE_IMPULSE)
-        # self.jump.direction = vec2(ideal_velocity - self.info.car.velocity)
+        # self.jump.direction = vec2(self.target.position - self.target_position)
         self.jump.direction = vec2(ideal_direction)
-        self.jump.preorientation = look_at(vec3(0, 0, ideal_direction.z), vec3(0, 0, 1))
+        self.jump.preorientation = look_at(ideal_direction, vec3(0, 0, 1))
 
         self.jump.step(self.info.dt)
         self.controls = self.jump.controls
@@ -152,15 +153,16 @@ class JumpStrike(Strike):
         local = dot(destination - car.position, car.orientation)
 
         # Specify conditions to be met.
+        u: float = dot(car.velocity, direction(car.position, target))
         t: float = (time - car.time - T)
         angle: float = atan2(local.y, local.x)
-        t -= abs(angle) * 0.4
+        t -= max(0, u / -BREAK_ACC * 2)
+        t -= abs(angle) * 0.325
         if t < 1 / 120:
             return False
         s: float = norm(xy(local))
-        u: float = max(0, dot(car.velocity, direction(car.position, target)))
-        d: float = (t * (s + T * u)) / (t + 2 * T)
+        d: float = (t * (s + T * max(0, u))) / (t + 2 * T)
 
         # Can we meet those conditions?
-        t2: float = get_time_to_reach_distance(d, u, car.boost)
+        t2: float = get_time_to_reach_distance(d, max(0, u), car.boost)
         return t2 < t
