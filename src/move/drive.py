@@ -1,5 +1,5 @@
 from math import pi, exp, atan2
-from typing import Tuple
+from typing import Tuple, Optional
 
 from utils import rendering
 from move.move import Move
@@ -24,23 +24,41 @@ DEFAULT_FINISHED_DIST: float = 140
 
 class Drive(Move):
     def __init__(
-        self, info: GameInfo, target: vec3, finished_dist: float = DEFAULT_FINISHED_DIST
+        self,
+        info: GameInfo,
+        target: vec3,
+        finished_dist: float = DEFAULT_FINISHED_DIST,
+        find_intermediate: bool = True,
     ):
         super().__init__(info)
         self.target = target
         self.target_speed: float = MAX_CAR_SPEED
         self.finished_dist: float = finished_dist
+        self.find_intermediate: bool = find_intermediate
 
     def update(self):
         car = self.info.car
-        car_to_target = self.target - car.position
+
+        # Find intermediate target.
+        target: vec3 = self.target
+        if self.find_intermediate:
+            intermediate_target: Optional[vec3] = self.info.arena.find_intermediate(
+                car.position, target
+            )
+            if intermediate_target:
+                rendering.draw_polyline_3d(
+                    [car.position, target, intermediate_target], rendering.cyan()
+                )
+                target = intermediate_target
+
+        car_to_target = target - car.position
         angle = atan2(dot(car.left(), car_to_target), dot(car.forward(), car_to_target))
         if self.target_speed < 0:
             angle = sgn(angle) * (pi - abs(angle))
         abs_angle = abs(angle)
 
         # Clamp speed to maximum speed available due to target radius.
-        local_radius: vec3 = dot(car.orientation, self.target - car.position)
+        local_radius: vec3 = dot(car.orientation, target - car.position)
         max_speed: float = abs(self.target_speed)
         for inaccuracy_sign in (-1, 2, 1):
             radius: float = (local_radius.x ** 2 + local_radius.y ** 2) / (
@@ -79,8 +97,8 @@ class Drive(Move):
 
         self.finished = norm(car_to_target) < self.finished_dist
 
-        rendering.draw_rect_3d(self.target, 3, 3, True, rendering.red())
-        rendering.draw_line_3d(self.info.car.position, self.target, rendering.white())
+        rendering.draw_rect_3d(target, 3, 3, True, rendering.red())
+        rendering.draw_line_3d(self.info.car.position, target, rendering.white())
 
 
 def speed_controller(

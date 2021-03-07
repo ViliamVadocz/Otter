@@ -9,11 +9,13 @@ from utils.const import (
     DEFAULT_DOUBLE_JUMP_PEAK_TIME,
     DEFAULT_MAX_DOUBLE_JUMP_HEIGHT,
 )
+from utils.arena.arena import Arena
 from utils.match_settings import Map, GameMode, ParsedMatchSettings
 from utils.goal_prediction import GoalPrediction
 from utils.jump_prediction import get_jump_peak, get_double_jump_peak
 from rlutilities.simulation import Car, Ball, Game, BoostPad, BoostPadType
 from rlutilities.linear_algebra import norm, vec3
+from utils.arena.standard_arena import StandardArena
 
 BALL_PREDICT_DT = 1 / 120
 BALL_PREDICT_NUM = 720
@@ -37,6 +39,7 @@ class GameInfo(Game):
         self.settings: ParsedMatchSettings = ParsedMatchSettings(
             agent.get_match_settings()
         )
+        self.arena: Arena = None
         self.setup_mode()
         self.read_field_info(agent.get_field_info())
         self.reset_ball_prediction()
@@ -103,6 +106,8 @@ class GameInfo(Game):
         else:
             self.logger.warn(f"Unknown game mode: {self.settings.game_mode}")
             rlutilities.initialize("soccar")
+
+        self.arena = StandardArena()
 
     def reset_ball_prediction(self):
         self.ball_prediction: List[Ball] = []
