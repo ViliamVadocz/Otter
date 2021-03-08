@@ -87,7 +87,7 @@ class Drive(Move):
         )
 
         # Steering.
-        self.controls.steer = 1000 * (angle - angle_velocity / 60) ** 3
+        self.controls.steer = 250 * (angle - angle_velocity / 60) ** 3
         self.controls.steer = max(-1, min(1, self.controls.steer))
         self.controls.handbrake = (
             abs(angle) > HANDBRAKE_ANGLE
