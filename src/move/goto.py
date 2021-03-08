@@ -10,8 +10,9 @@ from move.speed_flip import SpeedFlip
 from utils.game_info import GameInfo
 from rlutilities.linear_algebra import dot, norm, vec3, normalize, angle_between
 
-MIN_SPEED_FLIP_SPEED = 700
-MAX_SPEED_FLIP_ANGLE = 0.2
+MIN_SPEED_FLIP_SPEED: float = 800
+MAX_SPEED_FLIP_SPEED: float = 2200
+MAX_SPEED_FLIP_ANGLE: float = 0.1
 MIN_HALF_FLIP_SPEED = 600
 MIN_BACKWARD_ANGLE = pi / 2 + 0.3
 
@@ -64,7 +65,7 @@ class Goto(Move):
                     grounded
                     and max(0, distance - self.drive.finished_dist)
                     > flip_distance * 1.2
-                    and forward_speed > MIN_SPEED_FLIP_SPEED
+                    and MIN_SPEED_FLIP_SPEED < forward_speed < MAX_SPEED_FLIP_SPEED
                     and angle < MAX_SPEED_FLIP_ANGLE
                 ):
                     left: bool = dot(
