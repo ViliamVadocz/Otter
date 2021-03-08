@@ -8,7 +8,7 @@ from move.idle import Idle
 from move.move import Move
 from move.followup import Followup
 from move.recovery import Recovery
-from utils.vectors import dist, alignment, direction
+from utils.vectors import dist, between, alignment, direction
 from move.escape_wall import EscapeWall
 from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
@@ -24,7 +24,7 @@ from move.kickoff.do_kickoff import DoKickoff
 from move.strike.jump_strike import JumpStrike
 from move.strike.aerial_strike import AerialStrike
 from move.strike.ground_strike import GroundStrike
-from rlutilities.linear_algebra import xy, dot, norm, vec3, normalize
+from rlutilities.linear_algebra import xy, dot, sgn, norm, vec3, normalize
 from move.strike.double_jump_strike import DoubleJumpStrike
 
 MIN_SAFE_BALL_X = 3000
@@ -112,6 +112,24 @@ class SoccarStrategy(Strategy):
             None,
         )
 
+        # Opponent target.
+        opponent_target: Ball = min(
+            [
+                next(
+                    (
+                        ball
+                        for ball in self.info.ball_prediction[::8]
+                        if JumpStrike.valid_target(
+                            self.info, car, ball.position, ball.time
+                        )
+                    ),
+                    None,
+                )
+                for car in self.info.get_opponents()
+            ],
+            key=lambda target: target.time if target else 10 ** 10,
+        )
+
         aerial_target: Optional[Ball] = next(
             (
                 ball
@@ -146,6 +164,7 @@ class SoccarStrategy(Strategy):
                 )
                 < 0
             )
+            or (opponent_target and opponent_target.time - target.time < 0.5)
         ):
             self.tmcp_handler.send_ball_action(aerial_target.time)
             return AerialStrike(self.info, aerial_target, opponent_goal)
@@ -183,6 +202,11 @@ class SoccarStrategy(Strategy):
                         goal_width / 2 - BACKPOST_OFFSET_X,
                         -(target.position.x if target else self.info.ball.position.x),
                     )
+                    if (
+                        self.info.car.position.y * sgn(our_goal.y) - abs(our_goal.y)
+                        > -250
+                    ):
+                        backpost.x *= -0.75
                     backpost.z = self.info.car.hitbox_widths.z
                     go_backpost: Goto = Goto(self.info, xy(backpost))
                     go_backpost.drive.finished_dist = 800
@@ -202,29 +226,13 @@ class SoccarStrategy(Strategy):
             ]
         ):
             # Go defend if the opponent can beat us to the ball.
-            opponent_target: Ball = min(
-                [
-                    next(
-                        (
-                            ball
-                            for ball in self.info.ball_prediction[::8]
-                            if JumpStrike.valid_target(
-                                self.info, car, ball.position, ball.time
-                            )
-                        ),
-                        None,
-                    )
-                    for car in self.info.get_opponents()
-                ],
-                key=lambda target: target.time if target else 10 ** 10,
-            )
-            if opponent_target and opponent_target.time < target.time - 0.5:
+            if opponent_target and opponent_target.time - target.time < -0.1:
                 defensive_position: vec3 = opponent_target.position + (
                     our_goal - opponent_target.position
                 ) * 0.8
 
                 # Pickup small pads.
-                if self.info.car.boost < 60:
+                if self.info.car.boost < 40:
                     small_pads: List[BoostPad] = [
                         pad
                         for pad_index, pad in enumerate(self.info.pads)
@@ -233,11 +241,19 @@ class SoccarStrategy(Strategy):
                         and pad_index not in self.reserved_pads.values()
                     ]
                     if small_pads:
-                        pad: BoostPad = min(
+                        pad: BoostPad = max(
                             small_pads,
-                            key=lambda pad: dist(pad.position, defensive_position),
+                            key=lambda pad: between(
+                                self.info.car.position, pad.position, defensive_position
+                            ),
                         )
-                        return PickupBoost(self.info, pad)
+                        if (
+                            between(
+                                self.info.car.position, pad.position, defensive_position
+                            )
+                            > 0.7
+                        ):
+                            return PickupBoost(self.info, pad)
 
                 go_defense: Goto = Goto(self.info, xy(defensive_position))
                 go_defense.drive.finished_dist = 2000

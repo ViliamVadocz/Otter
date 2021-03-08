@@ -1,4 +1,6 @@
-from rlutilities.linear_algebra import dot, mat3, norm, vec3, cross, normalize
+from typing import Union
+
+from rlutilities.linear_algebra import dot, mat3, norm, vec2, vec3, cross, normalize
 
 
 def dist(a: vec3, b: vec3) -> float:
@@ -35,3 +37,9 @@ def up_at(up: vec3, forward: vec3) -> mat3:
         forward[2], left[2], up[2],
     )
     # fmt: on
+
+
+def between(
+    a: Union[vec2, vec3], point: Union[vec2, vec3], b: Union[vec2, vec3]
+) -> float:
+    return dot(direction(a, point), direction(point, b),)
