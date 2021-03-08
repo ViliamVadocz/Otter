@@ -1,5 +1,6 @@
 from abc import abstractmethod
 
+from utils import rendering
 from move.move import Move
 from utils.vectors import dist
 from utils.game_info import GameInfo
@@ -18,6 +19,15 @@ class Strike(Move):
     def update(self):
         for ball in self.info.ball_prediction:
             if ball.time > self.target.time:
+                rendering.draw_polyline_3d(
+                    [
+                        self.info.car.position,
+                        ball.position,
+                        self.target.position,
+                        self.info.car.position,
+                    ],
+                    rendering.green(),
+                )
                 self.finished = (
                     dist(ball.position, self.target.position) > BALL_CHANGED_DIST
                 )
