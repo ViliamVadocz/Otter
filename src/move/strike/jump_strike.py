@@ -9,9 +9,11 @@ from utils.const import (
     BOOST_USAGE,
     DODGE_IMPULSE,
     MAX_CAR_SPEED,
+    DODGE_TIME_LIMIT,
     MAX_JUMP_DURATION,
     MAX_NO_BOOST_SPEED,
     MAX_FIRST_JUMP_HOLD,
+    get_turn_radius,
 )
 from utils.aiming import get_offset_direction
 from utils.vectors import dist, direction, flatten_by_normal
@@ -37,8 +39,8 @@ MAX_DIST_ERROR = 50
 
 
 class JumpStrike(Strike):
-    HEIGHT_OFFSET_DISTANCE: float = 50
-    OFFSET_DISTANCE: float = Ball.collision_radius + 25
+    HEIGHT_OFFSET_DISTANCE: float = 80
+    OFFSET_DISTANCE: float = Ball.collision_radius + 10
     SOLVE_JUMP: Callable[[Car, vec3, vec3], Tuple[vec3, float]] = solve_jump
     JUMP_HEIGHT_TO_TIME: Callable[
         [float, float, float], float
@@ -102,7 +104,7 @@ class JumpStrike(Strike):
             if (
                 not isinf(time_to_height)
                 and direction > 0.9
-                and time_to_height > time_left - 1 / 60
+                and time_to_height > time_left - 1 / 30
             ):
                 self.start_jump(time_left)
                 return
@@ -130,8 +132,9 @@ class JumpStrike(Strike):
         self.jump.delay = max(1 / 60 + self.jump.jump_duration, time_left - 1 / 15,)
 
         end_car_position: vec3 = self.info.car.position + self.info.car.velocity * time_left + 0.5 * self.info.gravity * time_left ** 2
-        ideal_direction: vec3 = direction(end_car_position, self.target.position)
-        # self.jump.direction = vec2(self.target.position - self.target_position)
+        ideal_direction: vec3 = direction(
+            end_car_position, self.target.position,
+        )
         self.jump.direction = vec2(ideal_direction)
         self.jump.preorientation = look_at(ideal_direction, vec3(0, 0, 1))
 
@@ -144,7 +147,7 @@ class JumpStrike(Strike):
             0, dot(car.up(), target - car.position) - cls.HEIGHT_OFFSET_DISTANCE
         )
         T = cls.JUMP_HEIGHT_TO_TIME(height, dot(car.up(), info.gravity))
-        if isinf(T):
+        if isinf(T) or T > DODGE_TIME_LIMIT:
             return False
 
         # Adjust destination for wall-hits.
@@ -156,8 +159,8 @@ class JumpStrike(Strike):
         u: float = dot(car.velocity, direction(car.position, target))
         t: float = (time - car.time - T)
         angle: float = atan2(local.y, local.x)
-        t -= max(0, u / -BREAK_ACC * 2)
-        t -= abs(angle) * 0.325
+        t -= max(0, u / -BREAK_ACC * 3)
+        t -= abs(angle) * 0.375
         if t < 1 / 120:
             return False
         s: float = norm(xy(local))
