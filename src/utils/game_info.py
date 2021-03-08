@@ -48,7 +48,7 @@ class GameInfo(Game):
         self.read_packet(packet)
         if self.frame == 0:
             print("hi")
-        self.reset_ball_prediction()
+        self.update_ball_prediction()
         # Sort of expensive and it is not needed yet.
         # self.goal_prediction = get_goal_prediction(self.ball_prediction, self.goals)
 
@@ -110,19 +110,25 @@ class GameInfo(Game):
         self.arena = StandardArena()
 
     def reset_ball_prediction(self):
-        self.ball_prediction: List[Ball] = []
-        ball = Ball(self.ball)
+        self.ball_prediction: List[Ball] = [Ball(self.ball)]
         for _ in range(BALL_PREDICT_NUM):
-            self.ball_prediction.append(ball)
-            ball = Ball(ball)
+            ball: Ball = Ball(self.ball_prediction[-1])
             ball.step(BALL_PREDICT_DT)
+            self.ball_prediction.append(ball)
 
     def update_ball_prediction(self):
         if close_ball(self.ball, self.ball_prediction[1]):
-            self.ball_prediction[:-1] = self.ball_prediction[1:]
-            self.ball_prediction[-1].step(BALL_PREDICT_DT)
+            for i in range(BALL_PREDICT_NUM):
+                if self.ball_prediction[i].time < self.time + 0.5 * BALL_PREDICT_DT:
+                    continue
+                for _ in range(i):
+                    ball: Ball = Ball(self.ball_prediction[-1])
+                    ball.step(BALL_PREDICT_DT)
+                    self.ball_prediction.append(ball)
+                    del self.ball_prediction[0]
+                break
         else:
-            self.setup_ball_prediction()
+            self.reset_ball_prediction()
 
 
 def close_ball(predicted: Ball, actual: Ball) -> bool:
