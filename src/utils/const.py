@@ -46,3 +46,24 @@ def get_speed_from_radius(radius: float) -> float:
         return (curvature - 0.00235) / (0.00398 - 0.00235) * (500 - 1000) + 1000
     else:
         return max(0, (curvature - 0.00398) / (0.0069 - 0.00398) * (0 - 500) + 500)
+
+
+def get_turn_curvature(speed: float) -> float:
+    speed = abs(speed)
+    if 0.0 <= speed < 500.0:
+        return 0.006900 - 5.84e-6 * speed
+    if 500.0 <= speed < 1000.0:
+        return 0.005610 - 3.26e-6 * speed
+    if 1000.0 <= speed < 1500.0:
+        return 0.004300 - 1.95e-6 * speed
+    if 1500.0 <= speed < 1750.0:
+        return 0.003025 - 1.1e-6 * speed
+    if 1750.0 <= speed < 2500.0:
+        return 0.001800 - 4e-7 * speed
+    return 0.0
+
+
+def get_turn_radius(speed: float):
+    if speed == 0:
+        return 0
+    return 1.0 / get_turn_curvature(speed)
