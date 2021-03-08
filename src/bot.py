@@ -46,7 +46,7 @@ class Otter(BaseAgent):
 
     def render(self):
         MIN_PREDICTION = 100
-        PREDICTION_STEP = 50
+        PREDICTION_STEP = 8
         if len(self.info.ball_prediction) > MIN_PREDICTION:
             rendering.begin_rendering("ball prediction")
             rendering.draw_polyline_3d(
