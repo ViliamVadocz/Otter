@@ -122,3 +122,7 @@ def close_ball(predicted: Ball, actual: Ball) -> bool:
         + abs(predicted.velocity.z - actual.velocity.z)
         < 10.0
     )
+
+
+def team_sign(team: int) -> float:
+    return team * -2 + 1

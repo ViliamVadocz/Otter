@@ -9,7 +9,7 @@ from move.move import Move
 from move.followup import Followup
 from move.recovery import Recovery
 from utils.vectors import dist, between, alignment, direction
-from utils.game_info import GameInfo
+from utils.game_info import GameInfo, team_sign
 from move.escape_wall import EscapeWall
 from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
@@ -138,9 +138,9 @@ class SoccarStrategy(Strategy):
         return None
 
     def should_clear(self, target: Ball, our_goal: vec3) -> bool:
-        if target and dist(target.position, our_goal) < 3000:
+        if target and dist(target.position, our_goal) < 3500:
             return True
-        return dist(self.info.ball.position, our_goal) < 2000
+        return dist(self.info.ball.position, our_goal) < 2500
 
     def has_best_touch(
         self, target: Ball, their_target: Optional[Ball], their_goal: vec3
@@ -208,8 +208,19 @@ class SoccarStrategy(Strategy):
             self.tmcp_handler.send_ready_action(-1.0)
             return go_backpost
 
+        # Find a defensive position.
+        teammates: List[Car] = self.info.get_teammates()
+        teammates_behind: List[Car] = [
+            mate
+            for mate in teammates
+            if (mate.position.y - car.position.y) * team_sign(car.team) < 0
+        ]
         defensive_position: vec3 = (
-            their_target.position + (our_goal - their_target.position) * 0.8
+            our_goal
+            + (their_target.position - our_goal)
+            * 0.9
+            * len(teammates_behind)
+            / len(teammates)
         ) if their_target else our_goal
 
         # Pickup small pads.
