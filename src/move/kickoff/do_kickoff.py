@@ -1,5 +1,5 @@
-from math import sin
-from typing import Optional
+from math import dist
+from typing import List, Optional
 
 from move.move import Move
 from move.drive import Drive
@@ -46,3 +46,18 @@ class DoKickoff(Move):
             self.controls.yaw *= self.dir
             self.controls.steer *= self.dir
         self.finished = self.info.state == GameState.Active
+
+    @staticmethod
+    def my_kickoff(info: GameInfo):
+        """
+        Looks for closer teammates to the ball than us,
+        prioritising lower indexes.
+        :param info: game info
+        :return: Whether there is a closer teammate.
+        """
+        our_distance: float = dist(info.car.position, info.ball.position) + info.index
+        closer: List[bool] = [
+            dist(car.position, info.ball.position) + car.id < our_distance
+            for car in info.get_teammates()
+        ]
+        return not any(closer)

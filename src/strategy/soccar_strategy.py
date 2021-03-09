@@ -63,91 +63,48 @@ class SoccarStrategy(Strategy):
 
         # Kickoff.
         if self.info.state == GameState.Kickoff:
-            closer: List[bool] = [
-                norm(car.position) + car.id
-                < norm(self.info.car.position) + self.info.index
-                for car in self.info.get_teammates()
-            ]
-            if any(closer):
-                if not pads:
-                    return Idle(self.info)
-                pad: BoostPad = min(
-                    pads, key=lambda pad: dist(pad.position, self.info.car.position),
-                )
-                # Reserve boost pad.
-                self.tmcp_handler.send_boost_action(self.info.pads.index(pad))
-                return PickupBoost(self.info, pad)
-            self.tmcp_handler.send_ball_action()  # TODO Get some Kickoff time estimate
-            return DoKickoff(self.info)
+            if DoKickoff.my_kickoff(self.info):
+                self.tmcp_handler.send_ball_action()  # TODO Get some Kickoff time estimate
+                return DoKickoff(self.info)
 
+            # Pickup a large boost pad.
+            if not pads:
+                return Idle(self.info)
+            pad: BoostPad = min(
+                pads, key=lambda pad: dist(pad.position, self.info.car.position),
+            )
+            self.tmcp_handler.send_boost_action(
+                self.info.pads.index(pad)
+            )  # Reserve boost pad.
+            return PickupBoost(self.info, pad)
+
+        # Get the opponent's goal.
         opponent_goal: vec3 = self.info.goals[not self.info.car.team].position
 
-        target: Optional[Ball] = next(
-            (
-                ball
-                for ball in self.info.ball_prediction
-                if JumpStrike.valid_target(
-                    self.info, self.info.car, ball.position, ball.time
-                )
-            ),
-            None,
-        )
+        # Get the main target (jump strike).
+        target: Optional[Ball] = JumpStrike.get_target(self.info)
 
         # Escape the wall.
         if EscapeWall.on_wall(self.info.car):
-            # Strike the ball if possible.
+            # Strike the ball if available.
             if target and target.time - self.info.time < WALL_STRIKE_TIME:
                 self.tmcp_handler.send_ball_action(target.time)
                 return JumpStrike(self.info, target, opponent_goal)
             return EscapeWall(self.info)
 
-        double_jump_target: Optional[Ball] = next(
-            (
-                ball
-                for ball in self.info.ball_prediction
-                if DoubleJumpStrike.valid_target(
-                    self.info, self.info.car, ball.position, ball.time
-                )
-            ),
-            None,
-        )
+        # Get the double jump strike target.
+        double_jump_target: Optional[Ball] = DoubleJumpStrike.get_target(self.info)
 
-        # Opponent target.
+        # Get the fastest opponent's jump strike target.
         opponent_target: Ball = min(
             [
-                next(
-                    (
-                        ball
-                        for ball in self.info.ball_prediction[::8]
-                        if JumpStrike.valid_target(
-                            self.info, car, ball.position, ball.time
-                        )
-                    ),
-                    None,
-                )
+                JumpStrike.get_target(self.info, car, step=8)
                 for car in self.info.get_opponents()
             ],
             key=lambda target: target.time if target else 10 ** 10,
         )
 
-        aerial_target: Optional[Ball] = next(
-            (
-                ball
-                for ball in self.info.ball_prediction[::2]
-                if
-                # alignment(
-                #     self.info.car.position,
-                #     ball.position,
-                #     opponent_goal,
-                #     normalize(self.info.gravity),
-                # )
-                # > MIN_AERIAL_ALIGNMENT and
-                AerialStrike.valid_target(
-                    self.info, self.info.car, ball.position, ball.time, opponent_goal
-                )
-            ),
-            None,
-        )
+        aerial_target: Optional[Ball] = AerialStrike.get_target(self.info, step=2)
 
         # Go for an aerial-strike.
         if aerial_target and (
@@ -279,15 +236,13 @@ class SoccarStrategy(Strategy):
         if not self.info.car.on_ground:
             if not isinstance(self.move, Recovery):
                 return Recovery(self.info)
-        # elif EscapeWall.on_wall(self.info.car):
-        #     if not isinstance(self.move, EscapeWall):
-        #         return EscapeWall(self.info)
         return None
 
     def handle_tmcp_message(self, message: TMCPMessage):
         # Remove pad reservation if we get a new message from that bot.
         if self.reserved_pads.get(message.index):
             self.reserved_pads[message.index] = None
+
         # Also remove pad reservations if the bot gets close.
         for bot_index, pad_index in self.reserved_pads.items():
             if pad_index is None:
@@ -300,6 +255,7 @@ class SoccarStrategy(Strategy):
                 < 200
             ):
                 self.reserved_pads[bot_index] = None
+
         # Reserve a pad.
         if message.action_type == ActionType.BOOST:
             pad_index = message.target
@@ -316,6 +272,7 @@ class SoccarStrategy(Strategy):
                     self.info.cars[message.index].position, pad_pos
                 ):
                     self.tmcp_handler.send_boost_action(pad_index)
+
                 # Go do something else if they're closer.
                 else:
                     self.move.finished = True
@@ -325,10 +282,3 @@ class SoccarStrategy(Strategy):
             self.goalie = None
         if message.action_type == ActionType.DEFEND:
             self.goalie = message.index
-
-        # if message.action_type == ActionType.DEMO:
-        #     pass
-        # if message.action_type == ActionType.READY:
-        #     pass
-        # if message.action_type == ActionType.DEFEND:
-        #     pass

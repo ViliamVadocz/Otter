@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from typing import List, Optional
 
 from utils import rendering
 from move.move import Move
@@ -36,5 +37,26 @@ class Strike(Move):
 
     @classmethod
     @abstractmethod
-    def valid_target(cls, car: Car, target: vec3, time: float) -> bool:
+    def valid_target(cls, info: GameInfo, car: Car, target: vec3, time: float) -> bool:
         pass
+
+    @classmethod
+    def get_target(
+        cls,
+        info: GameInfo,
+        ball_prediction: List[Ball] = None,
+        car: Car = None,
+        step: int = 1,
+    ) -> Optional[Ball]:
+        if not ball_prediction:
+            ball_prediction = info.ball_prediction
+        if not car:
+            car = info.car
+        return next(
+            (
+                ball
+                for ball in ball_prediction[::step]
+                if cls.valid_target(info, car, ball.position, ball.time)
+            ),
+            None,
+        )

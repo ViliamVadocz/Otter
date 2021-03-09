@@ -26,8 +26,6 @@ class GameInfo(Game):
         super().__init__()
         self.index = agent.index
         self.logger = agent.logger
-        self.large_boost_pads: List[BoostPad] = []
-        self.small_boost_pads: List[BoostPad] = []
         self.dt: float = 0.00833333333
         self.prev_time: float = 0.0
         self.prev_gravity: vec3 = vec3(self.gravity)
@@ -42,25 +40,11 @@ class GameInfo(Game):
         self.arena: Arena = None
         self.setup_mode()
         self.read_field_info(agent.get_field_info())
-        self.reset_ball_prediction()
+        self._reset_ball_prediction()
 
     def update(self, packet: GameTickPacket):
         self.read_packet(packet)
-        if self.frame == 0:
-            print("hi")
-        self.update_ball_prediction()
-        # Sort of expensive and it is not needed yet.
-        # self.goal_prediction = get_goal_prediction(self.ball_prediction, self.goals)
-
-        self.large_pads = [pad for pad in self.pads if pad.type == BoostPadType.Full]
-        self.small_pads = [pad for pad in self.pads if pad.type == BoostPadType.Partial]
-
-        # Invert boost pad timers.
-        # TODO Verify that this didn't change. If it did, remove.
-        for pad in self.large_boost_pads:
-            pad.timer = 10.0 - pad.timer
-        for pad in self.small_boost_pads:
-            pad.timer = 4.0 - pad.timer
+        self._update_ball_prediction()
 
         self.dt = self.time - self.prev_time
         self.prev_time = self.time
@@ -102,21 +86,21 @@ class GameInfo(Game):
             rlutilities.initialize("hoops")
         elif self.settings.game_mode == GameMode.Dropshot:
             rlutilities.initialize("dropshot")
-        # TODO Hockey, Rumble, Heatseeker
         else:
+            # TODO Hockey, Rumble, Heatseeker
             self.logger.warn(f"Unknown game mode: {self.settings.game_mode}")
             rlutilities.initialize("soccar")
 
         self.arena = StandardArena()
 
-    def reset_ball_prediction(self):
+    def _reset_ball_prediction(self):
         self.ball_prediction: List[Ball] = [Ball(self.ball)]
         for _ in range(BALL_PREDICT_NUM):
             ball: Ball = Ball(self.ball_prediction[-1])
             ball.step(BALL_PREDICT_DT)
             self.ball_prediction.append(ball)
 
-    def update_ball_prediction(self):
+    def _update_ball_prediction(self):
         if close_ball(self.ball, self.ball_prediction[1]):
             for i in range(BALL_PREDICT_NUM):
                 if self.ball_prediction[i].time < self.time + 0.5 * BALL_PREDICT_DT:
@@ -128,7 +112,7 @@ class GameInfo(Game):
                     del self.ball_prediction[0]
                 break
         else:
-            self.reset_ball_prediction()
+            self._reset_ball_prediction()
 
 
 def close_ball(predicted: Ball, actual: Ball) -> bool:
