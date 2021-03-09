@@ -159,8 +159,8 @@ class JumpStrike(Strike):
         u: float = dot(car.velocity, direction(car.position, target))
         t: float = (time - car.time - T)
         angle: float = atan2(local.y, local.x)
-        t -= max(0, u / -BREAK_ACC * 3)
-        t -= abs(angle) * 0.375
+        t -= max(0, u / -BREAK_ACC * 4)
+        t -= abs(angle) * 0.4
         if t < 1 / 120:
             return False
         s: float = norm(xy(local))
