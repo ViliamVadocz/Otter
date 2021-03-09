@@ -131,10 +131,10 @@ class Car():
 class ControlPoint():
 
     @overload
-    def __init__(self, arg0: vec3, arg1: vec3, arg2: vec3) -> None: 
+    def __init__(self) -> None: 
         pass
     @overload
-    def __init__(self) -> None: ...
+    def __init__(self, arg0: vec3, arg1: vec3, arg2: vec3) -> None: ...
 
     n: vec3
     p: vec3
@@ -143,10 +143,10 @@ class ControlPoint():
 class Curve():
 
     @overload
-    def __init__(self, arg0: List[ControlPoint]) -> None: 
+    def __init__(self, arg0: List[vec3]) -> None: 
         pass
     @overload
-    def __init__(self, arg0: List[vec3]) -> None: ...
+    def __init__(self, arg0: List[ControlPoint]) -> None: ...
     def calculate_distances(self) -> None: ...
     def calculate_max_speeds(self, arg0: float, arg1: float) -> float: ...
     def calculate_tangents(self) -> None: ...
@@ -179,7 +179,7 @@ class Field():
 
     pass
 class Game():
-    gravity = None # type: rlutilities.linear_algebra.vec3 # value = <rlutilities.linear_algebra.vec3 object at 0x0000029C892763E8>
+    gravity = None # type: rlutilities.linear_algebra.vec3 # value = <rlutilities.linear_algebra.vec3 object at 0x000001B374A37470>
     map = 'map_not_set'
 
     def __init__(self) -> None: ...
@@ -246,7 +246,6 @@ class Input():
     pass
 class Navigator():
     nodes = []
-
     def __init__(self, arg0: Car) -> None: ...
     def analyze_surroundings(self, arg0: float) -> None: ...
     def path_to(self, arg0: vec3, arg1: vec3, arg2: float) -> Curve: ...
