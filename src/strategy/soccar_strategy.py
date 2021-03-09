@@ -15,6 +15,7 @@ from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
 from move.strike.strike import Strike
 from rlutilities.simulation import (
+    Car,
     Ball,
     BoostPad,
     GameState,
@@ -181,18 +182,27 @@ class SoccarStrategy(Strategy):
     def play_defence(
         self, target: Optional[Ball], their_target: Optional[Ball], our_goal: vec3
     ) -> Move:
+        car: Car = self.info.car
+
         # Rotate backpost.
-        if target and dot(our_goal, self.info.car.position - target.position) < 0:
-            goal_width: float = self.info.goals[self.info.car.team].width
+        if (
+            target
+            and dot(
+                direction(car.position, target.position),
+                direction(car.position, our_goal),
+            )
+            < -0.2
+        ):
+            goal_width: float = self.info.goals[car.team].width
             backpost: vec3 = vec3(our_goal)
-            backpost += BACKPOST_GOAL_CAR_LERP_Y * (self.info.car.position - backpost)
+            backpost += BACKPOST_GOAL_CAR_LERP_Y * (car.position - backpost)
             backpost.x = copysign(
                 goal_width / 2 - BACKPOST_OFFSET_X,
                 -(target.position.x if target else self.info.ball.position.x),
             )
-            if self.info.car.position.y * sgn(our_goal.y) - abs(our_goal.y) > -250:
+            if car.position.y * sgn(our_goal.y) - abs(our_goal.y) > -250:
                 backpost.x *= -0.75
-            backpost.z = self.info.car.hitbox_widths.z
+            backpost.z = car.hitbox_widths.z
             go_backpost: Goto = Goto(self.info, xy(backpost))
             go_backpost.drive.finished_dist = 800
             self.tmcp_handler.send_ready_action(-1.0)
@@ -203,7 +213,7 @@ class SoccarStrategy(Strategy):
         ) if their_target else our_goal
 
         # Pickup small pads.
-        if self.info.car.boost < 40:
+        if car.boost < 40:
             small_pads: List[BoostPad] = [
                 pad
                 for pad_index, pad in enumerate(self.info.pads)
@@ -215,37 +225,28 @@ class SoccarStrategy(Strategy):
                 pad: BoostPad = max(
                     small_pads,
                     key=lambda pad: between(
-                        self.info.car.position, pad.position, defensive_position
+                        car.position, pad.position, defensive_position
                     ),
                 )
-                if (
-                    between(self.info.car.position, pad.position, defensive_position)
-                    > 0.7
-                ):
+                if between(car.position, pad.position, defensive_position) > 0.7:
                     return PickupBoost(self.info, pad)
 
         go_defense: Goto = Goto(self.info, xy(defensive_position))
         go_defense.drive.finished_dist = 2000
-        go_defense.drive.target_speed = dist(self.info.car.position, defensive_position)
+        go_defense.drive.target_speed = dist(car.position, defensive_position)
         self.tmcp_handler.send_ready_action(target.time if target else -1)
         return go_defense
 
     def strike_ball(self, target: Optional[Ball], goal: vec3) -> Optional[Strike]:
+        car: Car = self.info.car
+
         # Go for an aerial-strike.
         aerial_target: Optional[Ball] = AerialStrike.get_target(self.info, step=2)
         if aerial_target and (
             not target
             or (
-                dot(
-                    self.info.car.velocity,
-                    direction(self.info.car.position, aerial_target.position),
-                )
-                > 0
-                and dot(
-                    self.info.car.velocity,
-                    direction(self.info.car.position, target.position),
-                )
-                < 0
+                dot(car.velocity, direction(car.position, aerial_target.position),) > 0
+                and dot(car.velocity, direction(car.position, target.position),) < 0
             )
         ):
             self.tmcp_handler.send_ball_action(aerial_target.time)
