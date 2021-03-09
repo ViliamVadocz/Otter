@@ -29,12 +29,14 @@ class Drive(Move):
         target: vec3,
         finished_dist: float = DEFAULT_FINISHED_DIST,
         find_intermediate: bool = True,
+        use_boost: bool = True,
     ):
         super().__init__(info)
         self.target = target
         self.target_speed: float = MAX_CAR_SPEED
         self.finished_dist: float = finished_dist
         self.find_intermediate: bool = find_intermediate
+        self.use_boost: bool = use_boost
 
     def update(self):
         car = self.info.car
@@ -83,7 +85,10 @@ class Drive(Move):
             throttle = 0.05 * sgn(desired_speed - speed)
         self.controls.throttle = throttle
         self.controls.boost = (
-            boost and abs(angle) < MAX_BOOST_ANGLE and speed < MAX_CAR_SPEED
+            boost
+            and abs(angle) < MAX_BOOST_ANGLE
+            and speed < MAX_CAR_SPEED
+            and self.use_boost
         )
 
         # Steering.

@@ -59,8 +59,9 @@ class SoccarStrategy(Strategy):
             if pad.type == BoostPadType.Full
             and pad.state == BoostPadState.Available
             and pad_index not in self.reserved_pads.values()
-            and ((pad.position.y - self.info.ball.position.y) > 0)
-            == bool(self.info.car.team)
+            and (pad.position.y - self.info.ball.position.y)
+            * team_sign(self.info.car.team)
+            < -2000
         ]
         pad: Optional[BoostPad] = min(
             pads, key=lambda pad: dist(pad.position, self.info.car.position),
@@ -130,7 +131,11 @@ class SoccarStrategy(Strategy):
                 return strike
 
         # Pickup a large boost pad.
-        if self.info.car.boost < 55 and pad:
+        if (
+            pad
+            and self.info.car.boost < 60
+            and dist(self.info.ball.position, our_goal) > 4000
+        ):
             self.tmcp_handler.send_boost_action(self.info.pads.index(pad))
             return PickupBoost(self.info, pad)
 
@@ -142,18 +147,18 @@ class SoccarStrategy(Strategy):
                 return Recovery(self.info)
         elif not isinstance(self.move, Strike):
             target: Optional[Ball] = JumpStrike.get_target(self.info, step=8)
-            our_goal: vec3 = self.info.goals[not self.info.car.team].position
-            if self.should_clear(target, our_goal):
+            our_goal: vec3 = self.info.goals[self.info.car.team].position
+            if self.should_clear(target, our_goal, factor=0.8):
                 their_goal: vec3 = self.info.goals[not self.info.car.team].position
                 strike: Strike = self.strike_ball(target, their_goal)
                 if strike:
                     return strike
         return None
 
-    def should_clear(self, target: Ball, our_goal: vec3) -> bool:
-        if target and dist(target.position, our_goal) < 3000:
+    def should_clear(self, target: Ball, our_goal: vec3, factor: float = 1) -> bool:
+        if target and dist(target.position, our_goal) < 2500 * factor:
             return True
-        return dist(self.info.ball.position, our_goal) < 2500
+        return dist(self.info.ball.position, our_goal) < 1750 * factor
 
     def has_best_touch(
         self, target: Ball, their_target: Optional[Ball], their_goal: vec3
@@ -168,7 +173,7 @@ class SoccarStrategy(Strategy):
             (index, this_target)
             for index, this_target in our_targets
             if this_target
-            and (not their_target or this_target.time < their_target.time)
+            and (not their_target or this_target.time < their_target.time - 0.1)
         ]
         if beat_them:
             return (
@@ -258,6 +263,7 @@ class SoccarStrategy(Strategy):
         go_defense: Goto = Goto(self.info, xy(defensive_position))
         go_defense.drive.finished_dist = 2000
         go_defense.drive.target_speed = dist(car.position, defensive_position)
+        go_defense.drive.use_boost = False
         self.tmcp_handler.send_ready_action(target.time if target else -1)
         return go_defense
 
