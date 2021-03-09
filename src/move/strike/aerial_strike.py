@@ -130,10 +130,10 @@ class AerialStrike(Strike):
         return sim_car, boost_used
 
     @classmethod
-    def valid_target(
-        cls, info: GameInfo, car: Car, target: vec3, time: float, goal: vec3
-    ) -> bool:
+    def valid_target(cls, info: GameInfo, car: Car, target: vec3, time: float) -> bool:
         time_left = time - car.time
+
+        goal: vec3 = info.goals[not info.car.team].position
 
         if not car.on_ground:
             distance = dist(car.position, target)

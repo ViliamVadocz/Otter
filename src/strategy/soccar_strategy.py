@@ -1,5 +1,5 @@
 from math import copysign
-from typing import List, Mapping, Optional
+from typing import List, Tuple, Mapping, Optional
 
 from tmcp import ActionType, TMCPMessage
 
@@ -9,6 +9,7 @@ from move.move import Move
 from move.followup import Followup
 from move.recovery import Recovery
 from utils.vectors import dist, between, alignment, direction
+from utils.game_info import GameInfo
 from move.escape_wall import EscapeWall
 from move.pickup_boost import PickupBoost
 from strategy.strategy import Strategy
@@ -60,6 +61,9 @@ class SoccarStrategy(Strategy):
             and ((pad.position.y - self.info.ball.position.y) > 0)
             == bool(self.info.car.team)
         ]
+        pad: Optional[BoostPad] = min(
+            pads, key=lambda pad: dist(pad.position, self.info.car.position),
+        ) if pads else None
 
         # Kickoff.
         if self.info.state == GameState.Kickoff:
@@ -68,18 +72,18 @@ class SoccarStrategy(Strategy):
                 return DoKickoff(self.info)
 
             # Pickup a large boost pad.
-            if not pads:
+            if not pad:
                 return Idle(self.info)
-            pad: BoostPad = min(
-                pads, key=lambda pad: dist(pad.position, self.info.car.position),
-            )
-            self.tmcp_handler.send_boost_action(
-                self.info.pads.index(pad)
-            )  # Reserve boost pad.
+            self.tmcp_handler.send_boost_action(self.info.pads.index(pad))
             return PickupBoost(self.info, pad)
 
-        # Get the opponent's goal.
-        opponent_goal: vec3 = self.info.goals[not self.info.car.team].position
+        # Recover from being in the air.
+        if not self.info.car.on_ground:
+            return Recovery(self.info)
+
+        # Get the goals' position.
+        our_goal: vec3 = self.info.goals[self.info.car.team].position
+        their_goal: vec3 = self.info.goals[not self.info.car.team].position
 
         # Get the main target (jump strike).
         target: Optional[Ball] = JumpStrike.get_target(self.info)
@@ -89,24 +93,146 @@ class SoccarStrategy(Strategy):
             # Strike the ball if available.
             if target and target.time - self.info.time < WALL_STRIKE_TIME:
                 self.tmcp_handler.send_ball_action(target.time)
-                return JumpStrike(self.info, target, opponent_goal)
+                return JumpStrike(self.info, target, their_goal)
             return EscapeWall(self.info)
 
-        # Get the double jump strike target.
-        double_jump_target: Optional[Ball] = DoubleJumpStrike.get_target(self.info)
-
         # Get the fastest opponent's jump strike target.
-        opponent_target: Ball = min(
+        their_target: Optional[Ball] = min(
             [
-                JumpStrike.get_target(self.info, car, step=8)
+                JumpStrike.get_target(self.info, car, step=6)
                 for car in self.info.get_opponents()
             ],
             key=lambda target: target.time if target else 10 ** 10,
         )
 
-        aerial_target: Optional[Ball] = AerialStrike.get_target(self.info, step=2)
+        # Clear the ball to our corner.
+        if self.should_clear(target, our_goal):
+            our_corner: vec3 = vec3(our_goal)
+            our_corner.x = copysign(
+                self.info.arena.width,
+                target.position.x if target else self.info.ball.position.x,
+            )
+            our_corner.y *= 0.9
+            strike: Strike = self.strike_ball(target, our_corner)
+            if strike:
+                return strike
 
+        # Strike to their net.
+        if self.has_best_touch(target, their_target, their_goal):
+            strike: Strike = self.strike_ball(target, their_goal)
+            if strike:
+                return strike
+
+        # Pickup a large boost pad.
+        if self.info.car.boost < 55 and pad:
+            self.tmcp_handler.send_boost_action(self.info.pads.index(pad))
+            return PickupBoost(self.info, pad)
+
+        return self.play_defence(target, their_target, our_goal)
+
+    def find_interrupt_move(self) -> Optional[Move]:
+        if not self.info.car.on_ground:
+            if not isinstance(self.move, Recovery):
+                return Recovery(self.info)
+        return None
+
+    def should_clear(self, target: Ball, our_goal: vec3) -> bool:
+        if target and dist(target.position, our_goal) < 3000:
+            return True
+        return dist(self.info.ball.position, our_goal) < 2000
+
+    def has_best_touch(
+        self, target: Ball, their_target: Optional[Ball], their_goal: vec3
+    ) -> bool:
+        our_targets: List[Tuple[int, Optional[Ball]]] = [
+            (car.id, JumpStrike.get_target(self.info, car, step=6))
+            for car in self.info.get_teammates()
+        ]
+        our_targets.append((self.info.index, target))
+
+        beat_them: List[Tuple[int, Ball]] = [
+            (index, this_target)
+            for index, this_target in our_targets
+            if this_target
+            and (not their_target or this_target.time < their_target.time)
+        ]
+        if beat_them:
+            return (
+                self.info.index
+                == max(
+                    beat_them,
+                    key=lambda index_target: dot(
+                        direction(
+                            self.info.cars[index_target[0]].position,
+                            index_target[1].position,
+                        ),
+                        direction(index_target[1].position, their_goal),
+                    ),
+                )[0]
+            )
+
+        return not any(
+            [
+                not target or (this_target and this_target.time < target.time)
+                for index, this_target in our_targets
+            ]
+        )
+
+    def play_defence(
+        self, target: Optional[Ball], their_target: Optional[Ball], our_goal: vec3
+    ) -> Move:
+        # Rotate backpost.
+        if target and dot(our_goal, self.info.car.position - target.position) < 0:
+            goal_width: float = self.info.goals[self.info.car.team].width
+            backpost: vec3 = vec3(our_goal)
+            backpost += BACKPOST_GOAL_CAR_LERP_Y * (self.info.car.position - backpost)
+            backpost.x = copysign(
+                goal_width / 2 - BACKPOST_OFFSET_X,
+                -(target.position.x if target else self.info.ball.position.x),
+            )
+            if self.info.car.position.y * sgn(our_goal.y) - abs(our_goal.y) > -250:
+                backpost.x *= -0.75
+            backpost.z = self.info.car.hitbox_widths.z
+            go_backpost: Goto = Goto(self.info, xy(backpost))
+            go_backpost.drive.finished_dist = 800
+            self.tmcp_handler.send_ready_action(-1.0)
+            return go_backpost
+
+        defensive_position: vec3 = (
+            their_target.position + (our_goal - their_target.position) * 0.8
+        ) if their_target else our_goal
+
+        # Pickup small pads.
+        if self.info.car.boost < 40:
+            small_pads: List[BoostPad] = [
+                pad
+                for pad_index, pad in enumerate(self.info.pads)
+                if pad.type == BoostPadType.Partial
+                and pad.state == BoostPadState.Available
+                and pad_index not in self.reserved_pads.values()
+            ]
+            if small_pads:
+                pad: BoostPad = max(
+                    small_pads,
+                    key=lambda pad: between(
+                        self.info.car.position, pad.position, defensive_position
+                    ),
+                )
+                if (
+                    between(self.info.car.position, pad.position, defensive_position)
+                    > 0.7
+                ):
+                    return PickupBoost(self.info, pad)
+
+        go_defense: Goto = Goto(self.info, xy(defensive_position))
+        go_defense.drive.finished_dist = 2000
+        go_defense.drive.target_speed = dist(self.info.car.position, defensive_position)
+        self.tmcp_handler.send_ready_action(target.time if target else -1)
+        return go_defense
+
+    def strike_ball(self, target: Optional[Ball], goal: vec3) -> Optional[Strike]:
         # Go for an aerial-strike.
+        aerial_target: Optional[Ball] = AerialStrike.get_target(self.info, step=2)
         if aerial_target and (
             not target
             or (
@@ -121,122 +247,24 @@ class SoccarStrategy(Strategy):
                 )
                 < 0
             )
-            or (opponent_target and opponent_target.time - target.time < 0.5)
         ):
             self.tmcp_handler.send_ball_action(aerial_target.time)
-            return AerialStrike(self.info, aerial_target, opponent_goal)
-
-        # Recover from being in the air.
-        if not self.info.car.on_ground:
-            return Recovery(self.info)
-
-        # Define our goal's position.
-        our_goal: vec3 = self.info.goals[self.info.car.team].position
-        goal_width: float = self.info.goals[self.info.car.team].width
-
-        # Choose to grab boost or rotate to backpost.
-        if not target or target.time - self.info.time > STRIKE_PRIORITY_TIME:
-            if not target or abs(target.position.x) > MIN_SAFE_BALL_X:
-                # Grab boost.
-                if self.info.car.boost < LOW_BOOST_AMOUNT and pads:
-                    defensive_position: vec3 = (self.info.car.position + our_goal) / 2
-                    pad: BoostPad = min(
-                        pads, key=lambda pad: dist(pad.position, defensive_position),
-                    )
-                    # Reserve boost pad.
-                    self.tmcp_handler.send_boost_action(self.info.pads.index(pad))
-                    return PickupBoost(self.info, pad)
-                elif not target or (
-                    self.goalie is None
-                    and dot(our_goal, self.info.car.position - target.position) < 0
-                ):
-                    # Rotate backpost.
-                    backpost: vec3 = vec3(our_goal)
-                    backpost += BACKPOST_GOAL_CAR_LERP_Y * (
-                        self.info.car.position - backpost
-                    )
-                    backpost.x = copysign(
-                        goal_width / 2 - BACKPOST_OFFSET_X,
-                        -(target.position.x if target else self.info.ball.position.x),
-                    )
-                    if (
-                        self.info.car.position.y * sgn(our_goal.y) - abs(our_goal.y)
-                        > -250
-                    ):
-                        backpost.x *= -0.75
-                    backpost.z = self.info.car.hitbox_widths.z
-                    go_backpost: Goto = Goto(self.info, xy(backpost))
-                    go_backpost.drive.finished_dist = 800
-                    self.tmcp_handler.send_ready_action(-1.0)
-                    return go_backpost
-
-        # At this point we are guaranteed to have a target.
-
-        towards_our_goal: float = dot(
-            direction(self.info.car.position, target.position),
-            direction(our_goal, target.position),
-        )
-        if towards_our_goal > -0.5 and all(
-            [
-                dist(car.position, our_goal) > dist(self.info.car.position, our_goal)
-                for car in self.info.get_teammates()
-            ]
-        ):
-            # Go defend if the opponent can beat us to the ball.
-            if opponent_target and opponent_target.time - target.time < -0.1:
-                defensive_position: vec3 = opponent_target.position + (
-                    our_goal - opponent_target.position
-                ) * 0.8
-
-                # Pickup small pads.
-                if self.info.car.boost < 40:
-                    small_pads: List[BoostPad] = [
-                        pad
-                        for pad_index, pad in enumerate(self.info.pads)
-                        if pad.type == BoostPadType.Partial
-                        and pad.state == BoostPadState.Available
-                        and pad_index not in self.reserved_pads.values()
-                    ]
-                    if small_pads:
-                        pad: BoostPad = max(
-                            small_pads,
-                            key=lambda pad: between(
-                                self.info.car.position, pad.position, defensive_position
-                            ),
-                        )
-                        if (
-                            between(
-                                self.info.car.position, pad.position, defensive_position
-                            )
-                            > 0.7
-                        ):
-                            return PickupBoost(self.info, pad)
-
-                go_defense: Goto = Goto(self.info, xy(defensive_position))
-                go_defense.drive.finished_dist = 2000
-                go_defense.drive.target_speed = dist(
-                    self.info.car.position, defensive_position
-                )
-                self.tmcp_handler.send_ready_action(target.time)
-                return go_defense
+            return AerialStrike(self.info, aerial_target, goal)
 
         # Go for a double-jump-strike.
-        if (
-            double_jump_target
-            and double_jump_target.time < target.time - DOUBLE_JUMP_TIME_HANDICAP
+        double_jump_target: Optional[Ball] = DoubleJumpStrike.get_target(self.info)
+        if double_jump_target and (
+            not target
+            or double_jump_target.time < target.time - DOUBLE_JUMP_TIME_HANDICAP
         ):
             self.tmcp_handler.send_ball_action(double_jump_target.time)
-            return DoubleJumpStrike(self.info, double_jump_target, opponent_goal)
+            return DoubleJumpStrike(self.info, double_jump_target, goal)
 
         # Go for a jump-strike.
+        if not target:
+            return None
         self.tmcp_handler.send_ball_action(target.time)
-        return JumpStrike(self.info, target, opponent_goal)
-
-    def find_interrupt_move(self) -> Optional[Move]:
-        if not self.info.car.on_ground:
-            if not isinstance(self.move, Recovery):
-                return Recovery(self.info)
-        return None
+        return JumpStrike(self.info, target, goal)
 
     def handle_tmcp_message(self, message: TMCPMessage):
         # Remove pad reservation if we get a new message from that bot.

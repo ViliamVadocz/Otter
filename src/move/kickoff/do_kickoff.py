@@ -1,8 +1,8 @@
-from math import dist
 from typing import List, Optional
 
 from move.move import Move
 from move.drive import Drive
+from utils.vectors import dist
 from utils.game_info import GameInfo
 from rlutilities.simulation import GameState
 from rlutilities.linear_algebra import sgn, vec3

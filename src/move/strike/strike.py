@@ -42,20 +42,14 @@ class Strike(Move):
 
     @classmethod
     def get_target(
-        cls,
-        info: GameInfo,
-        ball_prediction: List[Ball] = None,
-        car: Car = None,
-        step: int = 1,
+        cls, info: GameInfo, car: Car = None, step: int = 1,
     ) -> Optional[Ball]:
-        if not ball_prediction:
-            ball_prediction = info.ball_prediction
         if not car:
             car = info.car
         return next(
             (
                 ball
-                for ball in ball_prediction[::step]
+                for ball in info.ball_prediction[::step]
                 if cls.valid_target(info, car, ball.position, ball.time)
             ),
             None,
