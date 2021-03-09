@@ -1,38 +1,18 @@
-from math import pi, cos, log, atan2, isinf
+from math import pi, atan2, isinf
 from typing import Any, Tuple, Union, Callable, Optional
 
 from utils import rendering
 from move.drive import Drive
-from utils.const import (
-    BOOST_ACC,
-    BREAK_ACC,
-    BOOST_USAGE,
-    DODGE_IMPULSE,
-    MAX_CAR_SPEED,
-    DODGE_TIME_LIMIT,
-    MAX_JUMP_DURATION,
-    MAX_NO_BOOST_SPEED,
-    MAX_FIRST_JUMP_HOLD,
-    get_turn_radius,
-)
+from utils.const import BREAK_ACC, DODGE_TIME_LIMIT
 from utils.aiming import get_offset_direction
-from utils.vectors import dist, direction, flatten_by_normal
+from utils.vectors import direction, flatten_by_normal
 from utils.game_info import GameInfo
 from move.strike.strike import Strike
 from rlutilities.mechanics import Dodge
 from utils.jump_prediction import solve_jump, time_to_reach_jump_height
 from rlutilities.simulation import Car, Ball
 from utils.drive_estimation import get_time_to_reach_distance
-from rlutilities.linear_algebra import (
-    xy,
-    dot,
-    norm,
-    vec2,
-    vec3,
-    look_at,
-    normalize,
-    angle_between,
-)
+from rlutilities.linear_algebra import xy, dot, norm, vec2, vec3, look_at, normalize
 
 MAX_BACKWARDS_DIST = 1000
 MAX_DIST_ERROR = 50
@@ -83,6 +63,12 @@ class JumpStrike(Strike):
         distance: float = norm(car_to_target_flat)
         distance -= car.hitbox_widths.x + car.hitbox_offset.x
         self.drive.target_speed = distance / max(1e-10, time_left)
+        angle: float = atan2(
+            dot(car.left(), car_to_target), dot(car.forward(), car_to_target)
+        )
+        self.drive.target_speed = max(
+            self.drive.target_speed, 1000 * max(0, abs(angle) / pi - 0.5)
+        )
         time_to_height: float = self.__class__.JUMP_HEIGHT_TO_TIME(
             height, dot(car.up(), self.info.gravity)
         )
