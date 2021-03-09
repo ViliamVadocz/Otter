@@ -107,14 +107,19 @@ class SoccarStrategy(Strategy):
         )
 
         # Clear the ball to our corner.
-        if self.should_clear(target, our_goal):
+        if self.should_clear(target, our_goal) and target:
             our_corner: vec3 = vec3(our_goal)
             our_corner.x = copysign(
                 self.info.arena.width,
                 target.position.x if target else self.info.ball.position.x,
             )
             our_corner.y *= 0.9
-            strike: Strike = self.strike_ball(target, our_corner)
+            strike: Strike = self.strike_ball(
+                target,
+                our_corner
+                if abs(our_corner.x - target.position.x) > 900
+                else their_goal,
+            )
             if strike:
                 return strike
 
@@ -135,10 +140,18 @@ class SoccarStrategy(Strategy):
         if not self.info.car.on_ground:
             if not isinstance(self.move, Recovery):
                 return Recovery(self.info)
+        elif not isinstance(self.move, Strike):
+            target: Optional[Ball] = JumpStrike.get_target(self.info, step=8)
+            our_goal: vec3 = self.info.goals[not self.info.car.team].position
+            if self.should_clear(target, our_goal):
+                their_goal: vec3 = self.info.goals[not self.info.car.team].position
+                strike: Strike = self.strike_ball(target, their_goal)
+                if strike:
+                    return strike
         return None
 
     def should_clear(self, target: Ball, our_goal: vec3) -> bool:
-        if target and dist(target.position, our_goal) < 3500:
+        if target and dist(target.position, our_goal) < 3000:
             return True
         return dist(self.info.ball.position, our_goal) < 2500
 
