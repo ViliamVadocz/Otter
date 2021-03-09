@@ -50,7 +50,6 @@ class OtterProfiler(Otter):
 
 
 if __name__ == "__main__":
-
     from rlbot.setup_manager import SetupManager
 
     manager = SetupManager()

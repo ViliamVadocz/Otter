@@ -61,7 +61,6 @@ class Flute(BaseAgent):
 
 
 if __name__ == "__main__":
-
     from rlbot.setup_manager import SetupManager
 
     manager = SetupManager()

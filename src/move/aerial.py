@@ -21,7 +21,6 @@ class Aerial(Move):
         self.timer: float = inf
 
     def update(self):
-
         # Just use the RLU Mechanic
         self.aerial.step(self.info.dt)
         self.controls = self.aerial.controls
