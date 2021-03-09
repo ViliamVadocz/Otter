@@ -44,7 +44,7 @@ class GameInfo(Game):
 
     def update(self, packet: GameTickPacket):
         self.read_packet(packet)
-        self._update_ball_prediction()
+        self._reset_ball_prediction()
 
         self.dt = self.time - self.prev_time
         self.prev_time = self.time
