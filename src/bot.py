@@ -7,6 +7,7 @@ from utils.game_info import GameInfo
 from strategy.strategy import Strategy
 from utils.match_settings import GameMode
 from rlutilities.simulation import Game, Input
+from strategy.test_strategy import TestStrategy
 from strategy.soccar_strategy import SoccarStrategy
 from strategy.default_strategy import DefaultStrategy
 
@@ -41,7 +42,8 @@ class Otter(BaseAgent):
 
     def pick_strategy(self) -> Strategy:
         if self.info.settings.game_mode == GameMode.Soccer:
-            return SoccarStrategy(self.info, self.tmcp_handler)
+            return TestStrategy(self.info, self.tmcp_handler)
+            # return SoccarStrategy(self.info, self.tmcp_handler)
         return DefaultStrategy(self.info, self.tmcp_handler)
 
     def render(self):
