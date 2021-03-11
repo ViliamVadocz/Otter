@@ -36,16 +36,16 @@ class Ball():
     restitution = 0.6000000238418579
 
     @overload
-    def __init__(self, arg0: Ball) -> None: 
+    def __init__(self) -> None: 
         pass
     @overload
-    def __init__(self) -> None: ...
+    def __init__(self, arg0: Ball) -> None: ...
     def hitbox(self) -> sphere: ...
     @overload
-    def step(self, arg0: float) -> None: 
+    def step(self, arg0: float, arg1: Car) -> None: 
         pass
     @overload
-    def step(self, arg0: float, arg1: Car) -> None: ...
+    def step(self, arg0: float) -> None: ...
 
     angular_velocity: vec3
     position: vec3
@@ -98,10 +98,10 @@ class BoostPadType():
 class Car():
 
     @overload
-    def __init__(self) -> None: 
+    def __init__(self, arg0: Car) -> None: 
         pass
     @overload
-    def __init__(self, arg0: Car) -> None: ...
+    def __init__(self) -> None: ...
     def extrapolate(self, arg0: float) -> None: ...
     def forward(self) -> vec3: ...
     def hitbox(self) -> obb: ...
@@ -179,7 +179,7 @@ class Field():
 
     pass
 class Game():
-    gravity = None # type: rlutilities.linear_algebra.vec3 # value = <rlutilities.linear_algebra.vec3 object at 0x000001B374A37470>
+    gravity = None # type: rlutilities.linear_algebra.vec3 # value = <rlutilities.linear_algebra.vec3 object at 0x000001C3E9CDCCF0>
     map = 'map_not_set'
 
     def __init__(self) -> None: ...
@@ -246,8 +246,9 @@ class Input():
     pass
 class Navigator():
     nodes = []
+
     def __init__(self, arg0: Car) -> None: ...
-    def analyze_surroundings(self, arg0: float) -> None: ...
+    def analyze_surroundings(self) -> None: ...
     def path_to(self, arg0: vec3, arg1: vec3, arg2: float) -> Curve: ...
 
     pass
@@ -262,10 +263,10 @@ class obb():
 class ray():
 
     @overload
-    def __init__(self, arg0: vec3, arg1: vec3) -> None: 
+    def __init__(self) -> None: 
         pass
     @overload
-    def __init__(self) -> None: ...
+    def __init__(self, arg0: vec3, arg1: vec3) -> None: ...
 
     direction: vec3
     start: vec3
