@@ -245,7 +245,7 @@ class SoccarStrategy(Strategy):
         defensive_position: vec3 = (
             our_goal
             + (their_target.position - our_goal)
-            * min(1, 1.25 * len(teammates_behind) / len(teammates))
+            * min(1, 1.25 * len(teammates_behind) / max(1, len(teammates)))
         ) if their_target else our_goal
 
         # Pickup small pads.
