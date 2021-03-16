@@ -131,7 +131,7 @@ def get_double_jump_peak(grav: vec3) -> float:
 
 def solve_quadratic(a: float, b: float, c: float) -> Optional[Tuple[float, float]]:
     m = b ** 2 - 4 * a * c
-    if m < 0:
+    if m < 0 or not a:
         return None
     m = sqrt(m)
     t1 = (-b + m) / (2 * a)

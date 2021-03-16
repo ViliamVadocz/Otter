@@ -3,7 +3,15 @@ from typing import Any, Tuple, Union, Callable, Optional
 
 from utils import rendering
 from move.drive import Drive
-from utils.const import BREAK_ACC, DODGE_TIME_LIMIT
+from utils.const import (
+    JUMP_ACC,
+    BREAK_ACC,
+    JUMP_IMPULSE,
+    MAX_CAR_SPEED,
+    DODGE_TIME_LIMIT,
+    SUPERSONIC_SPEED,
+    DEFAULT_JUMP_PEAK_TIME,
+)
 from utils.aiming import get_offset_direction
 from utils.vectors import direction, flatten_by_normal
 from utils.game_info import GameInfo
@@ -19,12 +27,14 @@ MAX_DIST_ERROR = 50
 
 
 class JumpStrike(Strike):
-    HEIGHT_OFFSET_DISTANCE: float = 80
-    OFFSET_DISTANCE: float = Ball.collision_radius + 10
+    HEIGHT_OFFSET_DISTANCE: float = 50
+    OFFSET_DISTANCE: float = Ball.collision_radius + 15
+
     SOLVE_JUMP: Callable[[Car, vec3, vec3], Tuple[vec3, float]] = solve_jump
     JUMP_HEIGHT_TO_TIME: Callable[
         [float, float, float], float
     ] = time_to_reach_jump_height
+    JUMP_PEAK_TIME: float = DEFAULT_JUMP_PEAK_TIME
 
     def __init__(self, info: GameInfo, target: Ball, goal: vec3):
         super().__init__(info, target)
@@ -56,22 +66,15 @@ class JumpStrike(Strike):
 
         # Calculations.
         car_to_target = self.target_position - car.position
-        height: float = max(
-            0, dot(car_to_target, car.up()) - self.__class__.HEIGHT_OFFSET_DISTANCE
-        )
+        height: float = max(0, dot(car_to_target, car.up()))
         car_to_target_flat = flatten_by_normal(car_to_target, car.up())
         distance: float = norm(car_to_target_flat)
         distance -= car.hitbox_widths.x + car.hitbox_offset.x
-        self.drive.target_speed = distance / max(1e-10, time_left)
-        angle: float = atan2(
-            dot(car.left(), car_to_target), dot(car.forward(), car_to_target)
-        )
-        self.drive.target_speed = max(
-            self.drive.target_speed, 1000 * max(0, abs(angle) / pi - 0.5)
-        )
         time_to_height: float = self.__class__.JUMP_HEIGHT_TO_TIME(
             height, dot(car.up(), self.info.gravity)
         )
+        if isinf(time_to_height):
+            time_to_height = self.__class__.JUMP_PEAK_TIME
         self.drive.target = (
             self.target_position
             + 0.5
@@ -79,8 +82,42 @@ class JumpStrike(Strike):
             * (0 if isinf(time_to_height) else time_to_height) ** 2
         )
 
-        self.drive.update()
-        self.controls = self.drive.controls
+        # Update drive.
+        angle: float = atan2(
+            dot(car.left(), car_to_target), dot(car.forward(), car_to_target)
+        )
+        if abs(angle) > pi / 8:
+            self.drive.target_speed = 850
+            self.drive.update()
+            self.controls = self.drive.controls
+        else:
+            self.drive.update()
+            self.controls = self.drive.controls
+
+            u: float = dot(car.velocity, normalize(car_to_target_flat))
+            break_throttle: float = (-u * 120) / BREAK_ACC
+            if u >= 0:
+                t: float = time_left - time_to_height
+                s: float = norm(car_to_target_flat)
+                d: float = (t * (s + time_to_height * max(0, u))) / (
+                    t + 2 * time_to_height
+                )
+
+                # v: float = (2 * d) / t - u
+                # if v > SUPERSONIC_SPEED and not car.supersonic:
+                #     # Boost now to avoid boosting when supersonic later.
+                #     self.controls.throttle = 1
+                #     self.controls.boost = True
+                # el
+                if d >= 0:
+                    t2: float = get_time_to_reach_distance(d, max(0, u), car.boost)
+                    throttle: float = 2 ** (40 * (t2 / t - 1))
+                    throttle = throttle * (1 - break_throttle) + break_throttle
+                    self.controls.throttle = max(0, min(1, throttle))
+                    self.controls.boost = throttle > 0.99 and u < MAX_CAR_SPEED - 5
+            else:
+                self.controls.throttle = max(0, min(1, break_throttle))
+                self.controls.boost = break_throttle >= 1
 
         # Jump execution.
         if self.info.car.on_ground:
@@ -90,7 +127,7 @@ class JumpStrike(Strike):
             if (
                 not isinf(time_to_height)
                 and direction > 0.9
-                and time_to_height > time_left - 1 / 30
+                and time_to_height > time_left
             ):
                 self.start_jump(time_left)
                 return
@@ -115,9 +152,19 @@ class JumpStrike(Strike):
     def start_jump(self, time_left: float):
         self.jump = Dodge(self.info.car)
         self.jump.jump_duration = 0.2
-        self.jump.delay = max(1 / 60 + self.jump.jump_duration, time_left - 1 / 15,)
+        self.jump.delay = max(1 / 60 + self.jump.jump_duration, time_left,)
 
-        end_car_position: vec3 = self.info.car.position + self.info.car.velocity * time_left + 0.5 * self.info.gravity * time_left ** 2
+        end_car_position: vec3 = self.info.car.position
+        end_car_position += (
+            self.info.car.velocity + self.info.car.up() * JUMP_IMPULSE
+        ) * time_left
+        end_car_position += (
+            0.5
+            * self.info.car.up()
+            * JUMP_ACC
+            * min(self.jump.jump_duration, time_left) ** 2
+        )
+        end_car_position += 0.5 * self.info.gravity * time_left ** 2
         ideal_direction: vec3 = direction(
             end_car_position, self.target.position,
         )
@@ -145,8 +192,8 @@ class JumpStrike(Strike):
         u: float = dot(car.velocity, direction(car.position, target))
         t: float = (time - car.time - T)
         angle: float = atan2(local.y, local.x)
-        t -= max(0, u / -BREAK_ACC * 4)
-        t -= abs(angle) * 0.4
+        t -= max(0, u / -BREAK_ACC * 5)
+        t -= abs(angle) * 0.45
         if t < 1 / 120:
             return False
         s: float = norm(xy(local))

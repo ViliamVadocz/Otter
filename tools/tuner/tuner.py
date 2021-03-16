@@ -26,11 +26,15 @@ class Tuner:
         self.apply_factor: float = apply_factor
         self.deltas: List[float] = [abs(var) for var in self.variables]
 
-    def graph(self):
-        plot(self.recorded[0], self.recorded[1])
-        plot(
-            self.recorded[0], [self.func(x, *self.variables) for x in self.recorded[0]]
-        )
+    def graph(self, invert: bool = False):
+        plot(self.recorded[invert], self.recorded[not invert])
+        output: List[float] = [
+            self.func(x, *self.variables) for x in self.recorded[invert]
+        ]
+        if invert:
+            plot(output, self.recorded[0])
+        else:
+            plot(self.recorded[0], output)
         show()
 
     def tune(self):
