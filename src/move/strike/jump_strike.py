@@ -28,7 +28,7 @@ MAX_DIST_ERROR = 50
 
 class JumpStrike(Strike):
     HEIGHT_OFFSET_DISTANCE: float = 50
-    OFFSET_DISTANCE: float = Ball.collision_radius + 15
+    OFFSET_DISTANCE: float = Ball.collision_radius + 70
 
     SOLVE_JUMP: Callable[[Car, vec3, vec3], Tuple[vec3, float]] = solve_jump
     JUMP_HEIGHT_TO_TIME: Callable[
@@ -157,22 +157,8 @@ class JumpStrike(Strike):
         self.jump.jump_duration = 0.2
         self.jump.delay = max(1 / 60 + self.jump.jump_duration, time_left,)
 
-        end_car_position: vec3 = self.info.car.position
-        end_car_position += (
-            self.info.car.velocity + self.info.car.up() * JUMP_IMPULSE
-        ) * time_left
-        end_car_position += (
-            0.5
-            * self.info.car.up()
-            * JUMP_ACC
-            * min(self.jump.jump_duration, time_left) ** 2
-        )
-        end_car_position += 0.5 * self.info.gravity * time_left ** 2
-        ideal_direction: vec3 = direction(
-            end_car_position, self.target.position,
-        )
-        self.jump.direction = vec2(ideal_direction)
-        self.jump.preorientation = look_at(ideal_direction, vec3(0, 0, 1))
+        self.jump.direction = vec2(self.target.position - self.target_position)
+        self.jump.preorientation = look_at(self.info.car.velocity, vec3(0, 0, 1))
 
         self.jump.step(self.info.dt)
         self.controls = self.jump.controls
