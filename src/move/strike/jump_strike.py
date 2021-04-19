@@ -111,7 +111,10 @@ class JumpStrike(Strike):
                 # el
                 if d >= 0:
                     t2: float = get_time_to_reach_distance(d, max(0, u), car.boost)
-                    throttle: float = 2 ** (40 * (t2 / t - 1))
+                    try:
+                        throttle: float = 2 ** (10 * (t2 / t - 1))
+                    except OverflowError:
+                        throttle: float = 1
                     throttle = throttle * (1 - break_throttle) + break_throttle
                     self.controls.throttle = max(0, min(1, throttle))
                     self.controls.boost = throttle > 0.99 and u < MAX_CAR_SPEED - 5
