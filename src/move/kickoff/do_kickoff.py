@@ -4,7 +4,7 @@ from move.move import Move
 from move.drive import Drive
 from utils.vectors import dist
 from utils.game_info import GameInfo
-from rlutilities.simulation import GameState
+from rlutilities.simulation import Car, GameState
 from rlutilities.linear_algebra import sgn, vec3
 from move.kickoff.corner_kickoff import CornerKickoff
 from move.kickoff.straight_kickoff import StraightKickoff
@@ -55,9 +55,14 @@ class DoKickoff(Move):
         :param info: game info
         :return: Whether there is a closer teammate.
         """
-        our_distance: float = dist(info.car.position, info.ball.position) + info.index
+
+        def distance(car: Car) -> float:
+            return dist(car.position, info.ball.position) + sgn(
+                car.position.x * car.position.y
+            )
+
+        our_distance: float = distance(info.car)
         closer: List[bool] = [
-            dist(car.position, info.ball.position) + car.id < our_distance
-            for car in info.get_teammates()
+            distance(car) < our_distance for car in info.get_teammates()
         ]
         return not any(closer)
