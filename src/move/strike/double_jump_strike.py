@@ -10,7 +10,7 @@ from rlutilities.linear_algebra import vec3
 
 
 class DoubleJumpStrike(JumpStrike):
-    OFFSET_DISTANCE: float = Ball.collision_radius
+    OFFSET_DISTANCE: float = Ball.collision_radius - 10
 
     SOLVE_JUMP: Callable[[Car, vec3, vec3], Tuple[vec3, float]] = solve_double_jump
     JUMP_HEIGHT_TO_TIME: Callable[

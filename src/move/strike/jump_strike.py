@@ -28,7 +28,7 @@ MAX_DIST_ERROR = 50
 
 class JumpStrike(Strike):
     HEIGHT_OFFSET_DISTANCE: float = 50
-    OFFSET_DISTANCE: float = Ball.collision_radius + 70
+    OFFSET_DISTANCE: float = Ball.collision_radius + 35
 
     SOLVE_JUMP: Callable[[Car, vec3, vec3], Tuple[vec3, float]] = solve_jump
     JUMP_HEIGHT_TO_TIME: Callable[
