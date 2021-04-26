@@ -212,12 +212,15 @@ class SoccarStrategy(Strategy):
 
         # Rotate backpost.
         if (
-            target
-            and dot(
-                direction(car.position, target.position),
-                direction(car.position, our_goal),
+            (
+                dot(
+                    direction(car.position, target.position),
+                    direction(car.position, our_goal),
+                )
+                > -0.2
             )
-            < -0.2
+            if target
+            else (car.boost < 50)
         ):
             goal_width: float = self.info.goals[car.team].width
             backpost: vec3 = vec3(our_goal)
