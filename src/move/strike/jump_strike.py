@@ -86,7 +86,7 @@ class JumpStrike(Strike):
         angle: float = atan2(
             dot(car.left(), car_to_target), dot(car.forward(), car_to_target)
         )
-        if abs(angle) > pi / 8:
+        if abs(angle) > pi / 16:
             self.drive.target_speed = 850
             self.drive.update()
             self.controls = self.drive.controls
@@ -181,9 +181,9 @@ class JumpStrike(Strike):
         u: float = dot(car.velocity, direction(car.position, target))
         t: float = (time - car.time - T)
         angle: float = atan2(local.y, local.x)
-        t -= max(0, u / -BREAK_ACC * 5)
-        t -= abs(angle) * 0.45
-        if t < 1 / 120:
+        t -= max(0, u / -BREAK_ACC * 6)
+        t -= abs(angle) * 0.37
+        if t <= 0:
             return False
         s: float = norm(xy(local))
         d: float = (t * (s + T * max(0, u))) / (t + 2 * T)

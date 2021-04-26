@@ -19,6 +19,8 @@ from rlbottraining.common_exercises.common_base_exercises import GoalieExercise
 
 @dataclass
 class RollingBall(GoalieExercise):
+    backwards: bool = False
+
     def make_game_state(self, rng: SeededRandomNumberGenerator) -> GameState:
         ball_pos = vec3(rng.uniform(-2000, 2000), 0, 100)
         target = vec3(rng.uniform(-700, 700), -5200, 100)
@@ -35,7 +37,7 @@ class RollingBall(GoalieExercise):
             physics=Physics(
                 location=Vector3(rng.uniform(-2000, 2000), -4000, 0),
                 velocity=Vector3(0, 0, 0),
-                rotation=Rotator(0, pi / 2, 0),
+                rotation=Rotator(0, pi / (-2 if self.backwards else 2), 0),
                 angular_velocity=Vector3(0, 0, 0),
             ),
             boost_amount=40,
@@ -46,6 +48,8 @@ class RollingBall(GoalieExercise):
 
 @dataclass
 class BouncingBall(GoalieExercise):
+    backwards: bool = False
+
     def make_game_state(self, rng: SeededRandomNumberGenerator) -> GameState:
         ball_pos = vec3(rng.uniform(-2000, 2000), 0, 1000)
         target = vec3(rng.uniform(-700, 700), -5200, 100)
@@ -62,7 +66,7 @@ class BouncingBall(GoalieExercise):
             physics=Physics(
                 location=Vector3(rng.uniform(-2000, 2000), -3000, 0),
                 velocity=Vector3(0, 0, 0),
-                rotation=Rotator(0, pi / 2, 0),
+                rotation=Rotator(0, pi / (-2 if self.backwards else 2), 0),
                 angular_velocity=Vector3(0, 0, 0),
             ),
             boost_amount=40,
@@ -72,7 +76,12 @@ class BouncingBall(GoalieExercise):
 
 
 def make_default_playlist() -> Playlist:
-    exercises = [RollingBall("RollingBall"), BouncingBall("BouncingBall")]
+    exercises = [
+        # RollingBall("RollingBall"),
+        # BouncingBall("BouncingBall"),
+        # RollingBall("RollingBallBackwards", backwards=True),
+        BouncingBall("BouncingBallBackwards", backwards=True),
+    ]
     config = [
         PlayerConfig.bot_config(
             Path(__file__).absolute().parent.parent / "src" / "bot.cfg", Team.BLUE

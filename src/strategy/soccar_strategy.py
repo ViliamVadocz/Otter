@@ -103,7 +103,8 @@ class SoccarStrategy(Strategy):
             [
                 JumpStrike.get_target(self.info, car, step=6)
                 for car in self.info.get_opponents()
-            ],
+            ]
+            + [None],
             key=lambda target: target.time if target else 10 ** 10,
         )
 
