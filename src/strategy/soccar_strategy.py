@@ -49,7 +49,7 @@ class SoccarStrategy(Strategy):
     def find_base_move(self) -> Move:
         # Idle.
         if self.info.state == GameState.Inactive:
-            self.tmcp_handler.send_ready_action(-1)
+            self.tmcp_handler.send_ready_action(-1.0)
             return Idle(self.info)
 
         # Filter the large-pads for non-reserved active ones.
@@ -277,7 +277,7 @@ class SoccarStrategy(Strategy):
         go_defense.drive.finished_dist = 3000
         go_defense.drive.target_speed = dist(car.position, defensive_position)
         go_defense.drive.use_boost = False
-        self.tmcp_handler.send_ready_action(target.time if target else -1)
+        self.tmcp_handler.send_ready_action(target.time if target else -1.0)
         return go_defense
 
     def strike_ball(self, target: Optional[Ball], goal: vec3) -> Optional[Strike]:

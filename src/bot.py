@@ -1,4 +1,4 @@
-from tmcp import TMCP_VERSION, TMCPHandler
+from tmcp import TMCPHandler
 from rlbot.agents.base_agent import BaseAgent
 from rlbot.utils.structures.game_data_struct import GameTickPacket
 
@@ -18,9 +18,6 @@ class Otter(BaseAgent):
     def initialize_agent(self):
         self.info: GameInfo = GameInfo(self)
         self.tmcp_handler = TMCPHandler(self)
-        # If the package version doesn't match what we expect, disable comms.
-        if TMCP_VERSION != [0, 9]:
-            self.tmcp_handler.disable()
         self.strategy: Strategy = self.pick_strategy()
         rendering.bind_renderer(self.renderer)
 
